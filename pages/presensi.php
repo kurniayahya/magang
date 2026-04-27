@@ -6,7 +6,7 @@ $user = getCurrentUser();
 
 if (!$user) {
     session_destroy();
-    header('Location: ' . APP_URL . '/index.php');
+    header('Location: ' . APP_URL);
     exit;
 }
 
@@ -22,6 +22,13 @@ if (!$siswa) {
 
 $pageTitle = 'Lokasi Anda';
 $showBack = true;
+$extraHead = '
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #map { width: 100%; height: 280px; border-radius: var(--radius-md); z-index: 1; }
+    .map-container { padding: 0; overflow: hidden; }
+</style>
+';
 include __DIR__ . '/../includes/header.php';
 
 $db = getDB();
@@ -62,13 +69,12 @@ if (isset($_GET['msg'])) {
     <?php endif; ?>
 
     <div class="map-container card">
-        <img src="https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff4444(<?= $siswa['longitude'] ?? 106.816666 ?>,<?= $siswa['latitude'] ?? -6.200000 ?>)/<?= $siswa['longitude'] ?? 106.816666 ?>,<?= $siswa['latitude'] ?? -6.200000 ?>,15/600x300?access_token=pk.eyJ1IjoiZGV2LWV4YW1wbGUiLCJhIjoiY2t4YnJueHlsMDBicjJ2cW0zeDZ3NGRqNyJ9" class="map-placeholder" alt="Peta Lokasi">
-        <div class="map-pin">
-            <i class="fas fa-location-dot"></i>
-        </div>
-        
-        <div style="position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 10px 20px; border-radius: var(--radius-md); width: 80%; text-align: center; box-shadow: var(--shadow-lg);">
-            <div style="font-size: 0.75rem; opacity: 0.9;">Tempat PKL:</div>
+        <div id="map"></div>
+    </div>
+    <div style="background: var(--primary); color: white; padding: 12px 20px; border-radius: var(--radius-md); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-md);">
+        <i class="fas fa-building" style="font-size: 1.3rem; opacity: 0.85;"></i>
+        <div>
+            <div style="font-size: 0.72rem; opacity: 0.85;">Tempat PKL:</div>
             <div style="font-weight: 700; font-size: 0.95rem;"><?= $siswa['tempat_pkl_nama'] ?></div>
         </div>
     </div>
@@ -123,21 +129,54 @@ if (isset($_GET['msg'])) {
 </div>
 
 <?php 
+$pklLat  = $siswa['latitude']  ?? -6.200000;
+$pklLng  = $siswa['longitude'] ?? 106.816666;
+$pklNama = addslashes($siswa['tempat_pkl_nama'] ?? 'Tempat PKL');
 $extraScript = "
+<script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const btn = document.getElementById('btnCheck');
-    const latIn = document.getElementById('latInput');
-    const lngIn = document.getElementById('lngInput');
+
+    /* ========== LEAFLET MAP ========== */
+    var pklLat  = {$pklLat};
+    var pklLng  = {$pklLng};
+    var pklNama = '{$pklNama}';
+
+    var map = L.map('map', { zoomControl: true, scrollWheelZoom: false }).setView([pklLat, pklLng], 16);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>',
+        maxZoom: 19
+    }).addTo(map);
+
+    var pklIcon = L.divIcon({
+        html: '<div style=\"background:var(--primary);width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);\"></div>',
+        iconSize: [36, 36],
+        iconAnchor: [18, 36],
+        popupAnchor: [0, -38],
+        className: ''
+    });
+
+    L.marker([pklLat, pklLng], { icon: pklIcon })
+        .addTo(map)
+        .bindPopup('<b>' + pklNama + '</b>')
+        .openPopup();
+
+    /* ========== GPS PRESENCE ========== */
+    var userMarker = null;
+
+    const btn     = document.getElementById('btnCheck');
+    const latIn   = document.getElementById('latInput');
+    const lngIn   = document.getElementById('lngInput');
     const locInfo = document.getElementById('locationInfo');
-    const form = document.getElementById('presenceForm');
+    const form    = document.getElementById('presenceForm');
 
     if (btn) {
         btn.addEventListener('click', function() {
             btn.disabled = true;
             btn.innerHTML = '<i class=\"fas fa-spinner fa-spin\"></i> Menunggu Lokasi...';
             locInfo.innerHTML = '<i class=\"fas fa-spinner fa-spin\"></i> Mendapatkan koordinat GPS...';
-            
+
             getLocation(function(res) {
                 if (res.error) {
                     alert(res.error);
@@ -148,10 +187,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     latIn.value = res.lat;
                     lngIn.value = res.lng;
                     locInfo.innerHTML = '<i class=\"fas fa-location-crosshairs\" style=\"color: var(--success);\"></i> Lokasi ditemukan: ' + res.lat.toFixed(6) + ', ' + res.lng.toFixed(6);
-                    
-                    setTimeout(() => {
-                        form.submit();
-                    }, 1000);
+
+                    if (userMarker) map.removeLayer(userMarker);
+                    userMarker = L.circleMarker([res.lat, res.lng], {
+                        radius: 10, color: '#10B981', fillColor: '#10B981',
+                        fillOpacity: 0.6, weight: 3
+                    }).addTo(map).bindPopup('Lokasi Anda').openPopup();
+                    map.setView([res.lat, res.lng], 17);
+
+                    setTimeout(() => { form.submit(); }, 1200);
                 }
             });
         });

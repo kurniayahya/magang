@@ -1,113 +1,114 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-requireLogin();
+requireRole('admin');
 
 $user = getCurrentUser();
-
-if ($user['role'] === 'siswa') {
-    redirect(APP_URL . '/dashboard');
-}
-
-$pageTitle = 'Dashboard Admin/Guru';
+$pageTitle = 'Dashboard Admin';
 include __DIR__ . '/../includes/header.php';
 
 $db = getDB();
-
-// Get overall stats
-$totalSiswa = $db->query("SELECT COUNT(*) FROM siswa")->fetchColumn();
-$totalHadir = $db->query("SELECT COUNT(*) FROM presensi WHERE tanggal = CURDATE() AND status = 'hadir'")->fetchColumn();
-$jurnalMasuk = $db->query("SELECT COUNT(*) FROM jurnal WHERE status = 'terkirim'")->fetchColumn();
-
-// Get list of students and their locations
-$stmt = $db->prepare("
-    SELECT s.*, u.nama, tp.nama as tempat_pkl, p.jam_masuk, p.status as presensi_status
-    FROM siswa s
-    JOIN users u ON s.user_id = u.id
-    LEFT JOIN tempat_pkl tp ON s.tempat_pkl_id = tp.id
-    LEFT JOIN presensi p ON s.id = p.siswa_id AND p.tanggal = CURDATE()
-");
-$stmt->execute();
-$siswaList = $stmt->fetchAll();
+$totalSiswa  = $db->query("SELECT COUNT(*) FROM siswa")->fetchColumn();
+$totalGuru   = $db->query("SELECT COUNT(*) FROM users WHERE role='guru' AND aktif=1")->fetchColumn();
+$totalHadir  = $db->query("SELECT COUNT(*) FROM presensi WHERE tanggal = CURDATE() AND status = 'hadir'")->fetchColumn();
+$jurnalPending = $db->query("SELECT COUNT(*) FROM jurnal WHERE status = 'terkirim'")->fetchColumn();
 ?>
 
-<div class="dash-header" style="background: linear-gradient(135deg, #2C3E50, #000000);">
+<div class="dash-header" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
     <div class="user-welcome">
         <h2>Halo, <?= explode(' ', $user['nama'])[0] ?>!</h2>
-        <p>Panel Monitoring PKL (<?= ucfirst($user['role']) ?>)</p>
+        <p>Panel Administrator MOPI PKL</p>
     </div>
     <img src="<?= getAvatarUrl($user['foto'], $user['nama']) ?>" class="user-avatar-dash" alt="Avatar">
 </div>
 
-<div class="menu-grid animate-fade-in" style="margin-top: -30px; padding: 0 10px;">
-    <div class="card" style="margin-bottom: 0; padding: 15px; text-align: center;">
-        <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary);"><?= $totalSiswa ?></div>
-        <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">TOTAL SISWA</div>
+<!-- Stats -->
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:-30px;padding:0 2px;margin-bottom:20px;">
+    <div class="card" style="margin-bottom:0;padding:18px;text-align:center;">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--primary);"><?= $totalSiswa ?></div>
+        <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;margin-top:3px;">TOTAL SISWA</div>
     </div>
-    <div class="card" style="margin-bottom: 0; padding: 15px; text-align: center;">
-        <div style="font-size: 1.5rem; font-weight: 800; color: var(--success);"><?= $totalHadir ?></div>
-        <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">HADIR HARI INI</div>
+    <div class="card" style="margin-bottom:0;padding:18px;text-align:center;">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--accent);"><?= $totalGuru ?></div>
+        <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;margin-top:3px;">TOTAL GURU</div>
     </div>
-    <div class="card" style="margin-bottom: 0; padding: 15px; text-align: center;">
-        <div style="font-size: 1.5rem; font-weight: 800; color: var(--warning);"><?= $jurnalMasuk ?></div>
-        <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">JURNAL PENDING</div>
+    <div class="card" style="margin-bottom:0;padding:18px;text-align:center;">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--success);"><?= $totalHadir ?></div>
+        <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;margin-top:3px;">HADIR HARI INI</div>
+    </div>
+    <div class="card" style="margin-bottom:0;padding:18px;text-align:center;">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--warning);"><?= $jurnalPending ?></div>
+        <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;margin-top:3px;">JURNAL PENDING</div>
     </div>
 </div>
 
-<div class="card animate-fade-in" style="margin-top: 20px;">
-    <div class="card-title">
-        <i class="fas fa-users" style="color: var(--primary);"></i> Monitoring Siswa
+<!-- Menu Admin -->
+<div class="card animate-fade-in">
+    <div class="card-title"><i class="fas fa-th-large" style="color:var(--primary);"></i> Menu Utama</div>
+    <div class="menu-grid" style="grid-template-columns:repeat(3,1fr);gap:18px;">
+        <a href="<?= APP_URL ?>/admin/users" class="menu-item">
+            <div class="menu-icon" style="background:linear-gradient(135deg,#4facfe,#00f2fe);">
+                <i class="fas fa-users-gear"></i>
+            </div>
+            <span class="menu-label">Kelola User</span>
+        </a>
+        <a href="<?= APP_URL ?>/admin/import" class="menu-item">
+            <div class="menu-icon" style="background:linear-gradient(135deg,#43e97b,#38f9d7);">
+                <i class="fas fa-file-import"></i>
+            </div>
+            <span class="menu-label">Import Data</span>
+        </a>
+        <a href="<?= APP_URL ?>/admin/tempat_pkl" class="menu-item">
+            <div class="menu-icon" style="background:linear-gradient(135deg,#f7971e,#ffd200);">
+                <i class="fas fa-building-flag"></i>
+            </div>
+            <span class="menu-label">Tempat PKL</span>
+        </a>
+        <a href="<?= APP_URL ?>/profil" class="menu-item">
+            <div class="menu-icon" style="background:linear-gradient(135deg,#a18cd1,#fbc2eb);">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <span class="menu-label">Profil Admin</span>
+        </a>
+        <a href="<?= APP_URL ?>/logout" class="menu-item">
+            <div class="menu-icon" style="background:linear-gradient(135deg,#ff6b6b,#ee0979);">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <span class="menu-label">Keluar</span>
+        </a>
     </div>
+</div>
+
+<!-- Siswa Terbaru -->
+<div class="card animate-fade-in">
+    <div class="card-title"><i class="fas fa-users" style="color:var(--primary);"></i> Aktivitas Siswa Hari Ini</div>
     <div class="activity-list">
-        <?php foreach ($siswaList as $s): ?>
-        <div class="activity-item" style="padding: 15px 0;">
-            <div class="activity-icon" style="background: <?= $s['presensi_status'] == 'hadir' ? 'var(--primary-light)' : '#F1F5F9' ?>;">
+        <?php
+        $stmt = $db->prepare("
+            SELECT u.nama, tp.nama as tempat_pkl, p.jam_masuk, p.status as presensi_status
+            FROM siswa s
+            JOIN users u ON s.user_id = u.id
+            LEFT JOIN tempat_pkl tp ON s.tempat_pkl_id = tp.id
+            LEFT JOIN presensi p ON s.id = p.siswa_id AND p.tanggal = CURDATE()
+            ORDER BY p.jam_masuk DESC
+            LIMIT 8
+        ");
+        $stmt->execute();
+        $list = $stmt->fetchAll();
+        foreach ($list as $s): ?>
+        <div class="activity-item">
+            <div class="activity-icon" style="background:<?= $s['presensi_status'] == 'hadir' ? 'var(--primary-light)' : '#F1F5F9' ?>;color:<?= $s['presensi_status'] == 'hadir' ? 'var(--primary)' : 'var(--text-muted)' ?>;">
                 <i class="fas fa-user"></i>
             </div>
             <div class="activity-info">
                 <div class="activity-name"><?= $s['nama'] ?></div>
                 <div class="activity-time"><?= $s['tempat_pkl'] ?? 'Belum ada tempat' ?></div>
-                <div style="font-size: 0.7rem; margin-top: 4px;">
-                    <?php if ($s['presensi_status'] == 'hadir'): ?>
-                        <span style="color: var(--success); font-weight: 600;"><i class="fas fa-check-circle"></i> Hadir (<?= $s['jam_masuk'] ?>)</span>
-                    <?php else: ?>
-                        <span style="color: var(--text-muted);"><i class="fas fa-clock"></i> Belum Absen</span>
-                    <?php endif; ?>
-                </div>
             </div>
-            <div style="display: flex; gap: 5px;">
-                <a href="#" class="header-icon-btn" style="color: var(--primary); font-size: 1rem;"><i class="fas fa-eye"></i></a>
-                <a href="#" class="header-icon-btn" style="color: var(--accent); font-size: 1rem;"><i class="fas fa-comment"></i></a>
+            <div style="font-size:0.72rem;font-weight:700;color:<?= $s['presensi_status'] == 'hadir' ? 'var(--success)' : 'var(--text-muted)' ?>;">
+                <?= $s['presensi_status'] == 'hadir' ? '✓ ' . $s['jam_masuk'] : 'Belum' ?>
             </div>
         </div>
         <?php endforeach; ?>
     </div>
-</div>
-
-<div class="menu-grid animate-fade-in" style="margin-top: 20px;">
-    <a href="#" class="menu-item">
-        <div class="menu-icon bg-purple">
-            <i class="fas fa-clipboard-check"></i>
-        </div>
-        <span class="menu-label">Validasi Jurnal</span>
-    </a>
-    <a href="#" class="menu-item">
-        <div class="menu-icon bg-blue">
-            <i class="fas fa-map-marked-alt"></i>
-        </div>
-        <span class="menu-label">Peta Siswa</span>
-    </a>
-    <a href="#" class="menu-item">
-        <div class="menu-icon bg-green">
-            <i class="fas fa-star"></i>
-        </div>
-        <span class="menu-label">Penilaian</span>
-    </a>
-    <a href="<?= APP_URL ?>/logout" class="menu-item">
-        <div class="menu-icon" style="background: #e74c3c; color: white;">
-            <i class="fas fa-sign-out-alt"></i>
-        </div>
-        <span class="menu-label">Keluar</span>
-    </a>
 </div>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

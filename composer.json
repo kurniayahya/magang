@@ -1,0 +1,16 @@
+{
+    "name": "mopi/pkl-app",
+    "description": "MOPI - Mobile PKL Application",
+    "type": "project",
+    "require": {
+        "phpoffice/phpspreadsheet": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}

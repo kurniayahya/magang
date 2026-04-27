@@ -8,10 +8,25 @@ function isLoggedIn() {
     return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 }
 
+function isRole(string $role): bool {
+    return isLoggedIn() && ($_SESSION['user_role'] ?? '') === $role;
+}
+function isSiswa(): bool { return isRole('siswa'); }
+function isGuru(): bool  { return isRole('guru'); }
+function isAdmin(): bool { return isRole('admin'); }
+
 function requireLogin() {
     if (!isLoggedIn()) {
-        header('Location: ' . APP_URL . '/index.php');
+        header('Location: ' . APP_URL);
         exit;
+    }
+}
+
+function requireRole(string ...$roles) {
+    requireLogin();
+    if (!in_array($_SESSION['user_role'] ?? '', $roles, true)) {
+        http_response_code(403);
+        die("<div style='font-family:sans-serif;text-align:center;padding:50px'><h2>403 - Akses Ditolak</h2><p>Anda tidak memiliki izin untuk mengakses halaman ini.</p><a href='" . APP_URL . "'>Kembali</a></div>");
     }
 }
 
@@ -103,6 +118,50 @@ function getUnreadChatCount($user_id) {
     $stmt = $db->prepare("SELECT COUNT(*) FROM chat WHERE ke_user_id = ? AND dibaca = 0");
     $stmt->execute([$user_id]);
     return $stmt->fetchColumn();
+}
+
+// Ambil semua siswa yang dibimbing oleh guru (berdasarkan user_id guru)
+function getSiswaBimbingan($guru_user_id) {
+    $db = getDB();
+    $stmt = $db->prepare("
+        SELECT s.*, u.nama, u.email, u.foto,
+               tp.nama as tempat_pkl_nama,
+               j.nama as jurusan_nama,
+               p.jam_masuk, p.jam_keluar, p.status as presensi_status, p.validasi as presensi_validasi
+        FROM siswa s
+        JOIN users u ON s.user_id = u.id
+        LEFT JOIN tempat_pkl tp ON s.tempat_pkl_id = tp.id
+        LEFT JOIN jurusan j ON s.jurusan_id = j.id
+        LEFT JOIN presensi p ON s.id = p.siswa_id AND p.tanggal = CURDATE()
+        WHERE s.guru_pembimbing_id = ?
+        ORDER BY u.nama ASC
+    ");
+    $stmt->execute([$guru_user_id]);
+    return $stmt->fetchAll();
+}
+
+function getAllTempat() {
+    $db = getDB();
+    return $db->query("SELECT * FROM tempat_pkl ORDER BY nama ASC")->fetchAll();
+}
+
+function getAllJurusan() {
+    $db = getDB();
+    return $db->query("SELECT * FROM jurusan ORDER BY nama ASC")->fetchAll();
+}
+
+function getAllSekolah() {
+    $db = getDB();
+    return $db->query("SELECT * FROM sekolah ORDER BY nama ASC")->fetchAll();
+}
+
+function getAllGuru() {
+    $db = getDB();
+    return $db->query("SELECT u.id, u.nama FROM users u WHERE u.role = 'guru' AND u.aktif = 1 ORDER BY u.nama ASC")->fetchAll();
+}
+
+function hashPassword(string $plain): string {
+    return password_hash($plain, PASSWORD_BCRYPT);
 }
 
 function formatTanggal($tanggal, $format = 'd M Y') {

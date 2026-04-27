@@ -1,10 +1,16 @@
 RewriteEngine On
-# RewriteBase /magang/ # Sesuaikan jika diletakkan di subfolder, atau hapus jika di root
+
+# Sesuaikan RewriteBase:
+#   - Jika app di ROOT domain (https://domain.com/)  => RewriteBase /
+#   - Jika app di SUBFOLDER (https://domain.com/magang/) => RewriteBase /magang/
+RewriteBase /magang/
 
 # Redirect trailing slashes
 RewriteRule ^(.*)/$ $1 [L,R=301]
 
-# Router
+# Izinkan akses langsung ke file & folder yang ada (aset, upload, dll)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
+
+# Semua route lainnya diarahkan ke index.php
 RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]
