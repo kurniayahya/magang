@@ -14,7 +14,11 @@ $siswaIds = array_column($siswaBimbingan, 'id');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     $jurnalId = (int)$_POST['jurnal_id'];
-    $action   = $_POST['action_val']; // validasi | tolak
+    $action = $_POST['action_val'] ?? '';
+    if ($action !== 'validasi' && $action !== 'tolak') {
+        header("Location: " . APP_URL . "/guru/validasi?msg=" . urlencode("Gagal: Aksi tidak terdeteksi. Silakan coba lagi."));
+        exit;
+    }
     $catatan  = sanitize($_POST['catatan'] ?? '');
 
     // Pastikan jurnal ini milik siswa bimbingan guru
@@ -27,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $status = ($action === 'validasi') ? 'divalidasi' : 'ditolak';
             $stmt = $db->prepare("UPDATE jurnal SET status=?, validasi_oleh=?, catatan_validator=? WHERE id=?");
             $stmt->execute([$status, $user['id'], $catatan, $jurnalId]);
-            $msg = $action === 'validasi' ? "Jurnal berhasil divalidasi." : "Jurnal ditolak.";
+            $msg = $action === 'validasi' ? "Jurnal diterima." : "Jurnal ditolak.";
         }
     }
     header("Location: " . APP_URL . "/guru/validasi?msg=" . urlencode($msg));
@@ -51,6 +55,18 @@ if ($siswaIds) {
     ");
     $stmt->execute($siswaIds);
     $jurnalList = $stmt->fetchAll();
+
+    // Fetch photos
+    $jurnalIds = array_column($jurnalList, 'id');
+    $fotoMap = [];
+    if ($jurnalIds) {
+        $inJurnal = implode(',', array_fill(0, count($jurnalIds), '?'));
+        $stmtFoto = $db->prepare("SELECT jurnal_id, nama_file FROM jurnal_foto WHERE jurnal_id IN ($inJurnal)");
+        $stmtFoto->execute($jurnalIds);
+        foreach ($stmtFoto->fetchAll() as $f) {
+            $fotoMap[$f['jurnal_id']][] = $f['nama_file'];
+        }
+    }
 }
 
 $pageTitle = 'Validasi Jurnal';
@@ -59,7 +75,9 @@ include __DIR__ . '/../../includes/header.php';
 ?>
 
 <?php if ($msg): ?>
-<div class="alert alert-success alert-auto-dismiss"><i class="fas fa-check-circle"></i> <?= $msg ?></div>
+<div class="alert <?= strpos($msg, 'Gagal') !== false ? 'alert-danger' : 'alert-success' ?> alert-auto-dismiss">
+    <i class="fas <?= strpos($msg, 'Gagal') !== false ? 'fa-exclamation-circle' : 'fa-check-circle' ?>"></i> <?= htmlspecialchars($msg) ?>
+</div>
 <?php endif; ?>
 
 <?php if (empty($jurnalList)): ?>
@@ -90,23 +108,41 @@ include __DIR__ . '/../../includes/header.php';
         <?php if ($j['deskripsi']): ?>
         <div style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;"><?= nl2br($j['deskripsi']) ?></div>
         <?php endif; ?>
+        <?php if (!empty($fotoMap[$j['id']])): ?>
+        <div style="margin-top: 10px; display: flex; gap: 10px; overflow-x: auto;">
+            <?php foreach ($fotoMap[$j['id']] as $foto): ?>
+                <a href="<?= APP_URL ?>/uploads/<?= htmlspecialchars($foto) ?>" target="_blank">
+                    <?php 
+                    $ext = strtolower(pathinfo($foto, PATHINFO_EXTENSION));
+                    if (in_array($ext, ['mp4','webm','ogg'])): 
+                    ?>
+                        <video src="<?= APP_URL ?>/uploads/<?= htmlspecialchars($foto) ?>" style="height: 60px; border-radius: 5px; border: 1px solid var(--border);" controls></video>
+                    <?php else: ?>
+                        <img src="<?= APP_URL ?>/uploads/<?= htmlspecialchars($foto) ?>" style="height: 60px; border-radius: 5px; border: 1px solid var(--border); object-fit: cover;">
+                    <?php endif; ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
     </div>
     <!-- Form Validasi -->
     <form method="POST" action="">
         <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
         <input type="hidden" name="jurnal_id" value="<?= $j['id'] ?>">
+        <input type="hidden" name="action_val" class="action-input" value="">
         <div class="form-group">
             <textarea name="catatan" class="form-control" rows="2"
                       placeholder="Catatan untuk siswa (opsional)..." style="font-size:0.85rem;"></textarea>
         </div>
         <div style="display:flex;gap:10px;">
-            <button type="submit" name="action_val" value="validasi" class="btn btn-primary"
-                    style="flex:1;background:linear-gradient(135deg,var(--success),#059669);">
+            <button type="button" class="btn btn-primary"
+                    style="flex:1;background:linear-gradient(135deg,var(--success),#059669);"
+                    onclick="this.closest('form').querySelector('.action-input').value='validasi'; this.closest('form').submit();">
                 <i class="fas fa-check-circle"></i> Validasi
             </button>
-            <button type="submit" name="action_val" value="tolak" class="btn"
+            <button type="button" class="btn"
                     style="flex:1;background:var(--error);color:white;"
-                    onclick="return confirm('Tolak jurnal ini?')">
+                    onclick="if(confirm('Tolak jurnal ini?')) { this.closest('form').querySelector('.action-input').value='tolak'; this.closest('form').submit(); }">
                 <i class="fas fa-times-circle"></i> Tolak
             </button>
         </div>

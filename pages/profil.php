@@ -10,11 +10,33 @@ if (!$user) {
     exit;
 }
 
-if ($user['role'] === 'guru') {
-    die("Halaman ini sementara tidak tersedia untuk Guru.");
-}
-
 $db = getDB();
+
+// --- Handle Change Password (Semua Role) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'change_password') {
+    verify_csrf();
+    $password_lama = $_POST['password_lama'] ?? '';
+    $password_baru = $_POST['password_baru'] ?? '';
+    $konfirmasi_password = $_POST['konfirmasi_password'] ?? '';
+
+    $stmt = $db->prepare("SELECT password FROM users WHERE id = ?");
+    $stmt->execute([$user['id']]);
+    $currentUser = $stmt->fetch();
+
+    if (!password_verify($password_lama, $currentUser['password'])) {
+        $error = "Password lama tidak sesuai.";
+    } elseif (strlen($password_baru) < 6) {
+        $error = "Password baru minimal 6 karakter.";
+    } elseif ($password_baru !== $konfirmasi_password) {
+        $error = "Konfirmasi password tidak cocok.";
+    } else {
+        $new_hash = password_hash($password_baru, PASSWORD_BCRYPT);
+        $stmt = $db->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmt->execute([$new_hash, $user['id']]);
+        header("Location: " . APP_URL . "/profil?success=2");
+        exit;
+    }
+}
 
 // --- Handle Form Submission untuk Admin ---
 if ($user['role'] === 'admin' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -70,6 +92,10 @@ if ($user['role'] === 'siswa') {
     if (!$siswa) {
         die("Error: Data siswa tidak ditemukan.");
     }
+} else if ($user['role'] === 'guru') {
+    $stmt = $db->prepare("SELECT g.nip, sk.nama as sekolah_nama FROM guru g LEFT JOIN sekolah sk ON g.sekolah_id = sk.id WHERE g.user_id = ?");
+    $stmt->execute([$user['id']]);
+    $guruInfo = $stmt->fetch();
 } else if ($user['role'] === 'admin') {
     $stmt = $db->prepare("SELECT * FROM sekolah WHERE id = ?");
     $stmt->execute([SCHOOL_ID]);
@@ -84,7 +110,12 @@ include __DIR__ . '/../includes/header.php';
 <div class="animate-fade-in">
     <?php if (isset($_GET['success'])): ?>
         <div class="alert alert-success alert-auto-dismiss">
-            <i class="fas fa-check-circle"></i> Berhasil memperbarui data!
+            <i class="fas fa-check-circle"></i> <?= $_GET['success'] == '2' ? 'Password berhasil diubah!' : 'Berhasil memperbarui data!' ?>
+        </div>
+    <?php endif; ?>
+    <?php if (isset($error)): ?>
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i> <?= $error ?>
         </div>
     <?php endif; ?>
 
@@ -95,6 +126,8 @@ include __DIR__ . '/../includes/header.php';
         
         <?php if ($user['role'] === 'siswa'): ?>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">NIS: <?= htmlspecialchars($siswa['nis']) ?> • <?= htmlspecialchars($siswa['kelas']) ?></p>
+        <?php elseif ($user['role'] === 'guru'): ?>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">NIP: <?= htmlspecialchars($guruInfo['nip'] ?? '-') ?> • <?= htmlspecialchars($guruInfo['sekolah_nama'] ?? SCHOOL_NAME) ?></p>
         <?php else: ?>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Administrator Sistem</p>
         <?php endif; ?>
@@ -197,6 +230,31 @@ include __DIR__ . '/../includes/header.php';
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
                     <i class="fas fa-save"></i> Simpan Identitas Sekolah
+                </button>
+            </form>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($user['role'] === 'guru' || $user['role'] === 'admin'): ?>
+        <div class="card" style="border-left: 5px solid var(--warning);">
+            <div class="card-title">Ganti Password</div>
+            <form action="" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                <input type="hidden" name="action" value="change_password">
+                <div class="form-group">
+                    <label class="form-label">Password Lama</label>
+                    <input type="password" name="password_lama" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password Baru</label>
+                    <input type="password" name="password_baru" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Konfirmasi Password Baru</label>
+                    <input type="password" name="konfirmasi_password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px; background: linear-gradient(135deg, var(--warning), #D97706);">
+                    <i class="fas fa-key"></i> Simpan Password Baru
                 </button>
             </form>
         </div>

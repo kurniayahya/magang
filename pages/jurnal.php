@@ -173,7 +173,13 @@ $todayJurnal = $stmt->fetch();
                     <div class="activity-name"><?= $h['kegiatan'] ?></div>
                     <div class="activity-time"><?= formatTanggal($h['tanggal']) ?> • Hari Ke-<?= $h['hari_ke'] ?></div>
                 </div>
-                <div style="font-size: 0.7rem; padding: 4px 8px; border-radius: 20px; background: <?= $h['status'] == 'divalidasi' ? 'var(--success)' : 'var(--warning)' ?>; color: white; font-weight: 700;">
+                <?php
+                $bgStatus = 'var(--text-muted)';
+                if ($h['status'] == 'divalidasi') $bgStatus = 'var(--success)';
+                elseif ($h['status'] == 'ditolak') $bgStatus = 'var(--error)';
+                elseif ($h['status'] == 'terkirim') $bgStatus = 'var(--primary)';
+                ?>
+                <div style="font-size: 0.7rem; padding: 4px 8px; border-radius: 20px; background: <?= $bgStatus ?>; color: white; font-weight: 700;">
                     <?= strtoupper($h['status']) ?>
                 </div>
             </div>

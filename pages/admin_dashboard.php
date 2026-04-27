@@ -13,17 +13,17 @@ $totalHadir  = $db->query("SELECT COUNT(*) FROM presensi WHERE tanggal = CURDATE
 $jurnalPending = $db->query("SELECT COUNT(*) FROM jurnal WHERE status = 'terkirim'")->fetchColumn();
 ?>
 
-<div class="dash-header" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
+<div class="dash-header" style="background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px 20px 45px 20px;">
     <div class="user-welcome">
-        <h2>Halo, <?= explode(' ', $user['nama'])[0] ?>!</h2>
-        <p>Panel Administrator MOPI PKL</p>
+        <h2 style="font-size: 1.3rem; margin-bottom: 2px;">Halo, <?= explode(' ', $user['nama'])[0] ?>!</h2>
+        <p style="font-size: 0.85rem;">Panel Administrator MOPI PKL</p>
     </div>
-    <img src="<?= getAvatarUrl($user['foto'], $user['nama']) ?>" class="user-avatar-dash" alt="Avatar">
+    <img src="<?= getAvatarUrl($user['foto'], $user['nama']) ?>" class="user-avatar-dash" style="top: 20px; width: 45px; height: 45px;" alt="Avatar">
 </div>
 
 <!-- Stats -->
-<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:-30px;padding:0 2px;margin-bottom:20px;">
-    <div class="card" style="margin-bottom:0;padding:18px;text-align:center;">
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:-25px;padding:0 2px;margin-bottom:15px;">
+    <div class="card" style="margin-bottom:0;padding:12px;text-align:center;">
         <div style="font-size:1.8rem;font-weight:800;color:var(--primary);"><?= $totalSiswa ?></div>
         <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;margin-top:3px;">TOTAL SISWA</div>
     </div>

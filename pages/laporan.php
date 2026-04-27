@@ -84,7 +84,13 @@ $totalPages = ceil($totalData / $limit);
                                 <div class="activity-name"><?= htmlspecialchars($row['kegiatan']) ?></div>
                                 <div class="activity-time"><?= formatTanggal($row['tanggal']) ?> • Hari Ke-<?= $row['hari_ke'] ?></div>
                             </div>
-                            <div style="font-size: 0.7rem; padding: 4px 8px; border-radius: 20px; background: <?= $row['status'] == 'divalidasi' ? 'var(--success)' : 'var(--warning)' ?>; color: white; font-weight: 700;">
+                            <?php
+                            $bgStatus = 'var(--text-muted)';
+                            if ($row['status'] == 'divalidasi') $bgStatus = 'var(--success)';
+                            elseif ($row['status'] == 'ditolak') $bgStatus = 'var(--error)';
+                            elseif ($row['status'] == 'terkirim') $bgStatus = 'var(--primary)';
+                            ?>
+                            <div style="font-size: 0.7rem; padding: 4px 8px; border-radius: 20px; background: <?= $bgStatus ?>; color: white; font-weight: 700;">
                                 <?= strtoupper($row['status']) ?>
                             </div>
                         </div>
