@@ -2,8 +2,8 @@
 -- MOPI - Mobile PKL Application Database
 -- ============================================
 
-CREATE DATABASE IF NOT EXISTS mopi_pkl CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE mopi_pkl;
+
+
 
 -- Tabel Sekolah
 CREATE TABLE sekolah (

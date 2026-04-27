@@ -1,5 +1,5 @@
 RewriteEngine On
-RewriteBase /magang/
+# RewriteBase /magang/ # Sesuaikan jika diletakkan di subfolder, atau hapus jika di root
 
 # Redirect trailing slashes
 RewriteRule ^(.*)/$ $1 [L,R=301]
