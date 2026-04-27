@@ -5,6 +5,7 @@ require_once __DIR__ . '/includes/functions.php';
 
 // Simple Router
 $route = $_GET['route'] ?? '';
+$route = ltrim($route, '/'); // Mendukung Nginx try_files $uri yang membawa slash di depan
 
 if (!$route || $route === 'login') {
     if (isLoggedIn()) {
