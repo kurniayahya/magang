@@ -67,16 +67,36 @@ composer install
    *(File ini sudah berisi skema lengkap dan data dummy untuk testing)*
 
 ### 3. Konfigurasi Aplikasi
-1. Duplikat/copy file `config/database.php.example` menjadi `config/database.php`.
-2. Buka `config/database.php` dan ubah nama sekolah sesuai institusi Anda:
-   ```php
-   define('SCHOOL_NAME', 'SMK Negeri 1 Kota Contoh'); // Ubah nama sekolah di sini
-   ```
-   *Catatan: Konfigurasi `APP_URL` sudah bersifat dinamis, sehingga Anda tidak perlu menyesuaikan path ketika pindah dari `localhost` ke `hosting/cPanel`.*
+1. Duplikat/copy file `.env.example` menjadi `.env` di direktori utama (root).
+2. Sesuaikan nilai konfigurasi di dalam file `.env`:
+   ```env
+   APP_NAME="MOPI PKL"
+   APP_URL="https://magang.domain-anda.com" # Wajib disesuaikan dengan URL asli aplikasi Anda
+   SCHOOL_NAME="SMK Negeri 1 Kota Contoh"
+   SCHOOL_ID=1
 
-### 4. Menjalankan Aplikasi
-- Buka browser dan akses aplikasi Anda (contoh: `http://localhost/magang`).
-- Tidak perlu setup `.htaccess` manual kecuali Anda meletakkannya di *subfolder yang sangat dalam* di server produksi. File `.htaccess` bawaan sudah diset untuk menangani routing dengan baik.
+   DB_HOST="localhost"
+   DB_USER="root"
+   DB_PASS="password_database_anda"
+   DB_NAME="magang"
+   ```
+
+### 4. Konfigurasi Web Server (Routing)
+Aplikasi ini menggunakan sistem *Single Entry Point* (seluruh rute masuk melalui `index.php`).
+
+**Untuk Pengguna Apache (cPanel, XAMPP, dll):**
+- Konfigurasi sudah tersedia pada file `.htaccess`.
+- Jika Anda menaruh aplikasi di **Root Domain** (misal: `https://magang.domain.com`), atur `RewriteBase /` di dalam `.htaccess`.
+- Jika ditaruh di **Sub-Folder** (misal: `https://domain.com/magang`), atur `RewriteBase /magang/` di `.htaccess`.
+
+**Untuk Pengguna NGINX (CloudPanel, VPS, dll):**
+- Server NGINX mengabaikan file `.htaccess`. Anda perlu mengedit blok konfigurasi *VHost* aplikasi Anda.
+- Tambahkan kode berikut pada bagian `location /`:
+  ```nginx
+  location / {
+      try_files $uri $uri/ /index.php?route=$uri&$args;
+  }
+  ```
 
 ---
 
@@ -108,6 +128,7 @@ Gunakan akun berikut untuk mencoba fitur-fitur di aplikasi (semua password defau
 ├── uploads/            # Penyimpanan file (foto jurnal & presensi)
 ├── database.sql        # Skema database & data dummy (siap pakai)
 ├── index.php           # Entry Point (Routing & Login)
+├── .env                # File Konfigurasi (Database, URL, Identitas)
 └── .htaccess           # Routing Server (Apache)
 ```
 
