@@ -5,7 +5,7 @@ requireLogin();
 $user = getCurrentUser();
 
 if ($user['role'] === 'siswa') {
-    redirect(APP_URL . '/pages/dashboard.php');
+    redirect(APP_URL . '/dashboard');
 }
 
 $pageTitle = 'Dashboard Admin/Guru';
