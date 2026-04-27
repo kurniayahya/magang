@@ -48,11 +48,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $jurnalId = $db->lastInsertId();
     }
 
-    // Handle File Upload (Simulated)
-    if (!empty($_FILES['foto']['name'])) {
-        $fileName = time() . '_' . $_FILES['foto']['name'];
-        $stmt = $db->prepare("INSERT INTO jurnal_foto (jurnal_id, nama_file) VALUES (?, ?)");
-        $stmt->execute([$jurnalId, $fileName]);
+    // Handle File Upload
+    if (!empty($_FILES['foto']['name']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = UPLOAD_PATH . 'jurnal/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $tmpName = $_FILES['foto']['tmp_name'];
+        $fileType = mime_content_type($tmpName);
+
+        if (strpos($fileType, 'image/') === 0) {
+            $fileName = time() . '_' . rand(1000,9999) . '.jpg';
+            $targetFile = $uploadDir . $fileName;
+
+            list($origWidth, $origHeight) = getimagesize($tmpName);
+            // Skala 0.2 (20% dari dimensi asli)
+            $newWidth = (int)($origWidth * 0.2);
+            $newHeight = (int)($origHeight * 0.2);
+
+            $image = null;
+            switch ($fileType) {
+                case 'image/jpeg': $image = @imagecreatefromjpeg($tmpName); break;
+                case 'image/png':  $image = @imagecreatefrompng($tmpName); break;
+                case 'image/gif':  $image = @imagecreatefromgif($tmpName); break;
+                case 'image/webp': $image = @imagecreatefromwebp($tmpName); break;
+            }
+
+            if ($image) {
+                $newImage = imagecreatetruecolor($newWidth, $newHeight);
+                // Latar putih (jika PNG transparan dikonversi ke JPG)
+                $bg = imagecolorallocate($newImage, 255, 255, 255);
+                imagefill($newImage, 0, 0, $bg);
+
+                imagecopyresampled($newImage, $image, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+                
+                // Simpan JPG dengan kompresi tinggi (kualitas 30)
+                imagejpeg($newImage, $targetFile, 30);
+                
+                imagedestroy($image);
+                imagedestroy($newImage);
+
+                $stmt = $db->prepare("INSERT INTO jurnal_foto (jurnal_id, nama_file) VALUES (?, ?)");
+                $stmt->execute([$jurnalId, 'jurnal/' . $fileName]);
+            }
+        } else {
+            // Untuk video atau file lain
+            $ext = pathinfo($_FILES['foto']['name'], PATHINFO_EXTENSION);
+            $fileName = time() . '_' . rand(1000,9999) . '.' . $ext;
+            $targetFile = $uploadDir . $fileName;
+
+            if (move_uploaded_file($tmpName, $targetFile)) {
+                $stmt = $db->prepare("INSERT INTO jurnal_foto (jurnal_id, nama_file) VALUES (?, ?)");
+                $stmt->execute([$jurnalId, 'jurnal/' . $fileName]);
+            }
+        }
     }
 
     header("Location: " . APP_URL . "/jurnal?success=1");
@@ -129,7 +179,7 @@ $todayJurnal = $stmt->fetch();
             </div>
             <?php endforeach; ?>
         </div>
-        <a href="#" style="display: block; text-align: center; margin-top: 15px; font-size: 0.85rem; color: var(--primary); font-weight: 600;">Lihat Semua Jurnal <i class="fas fa-arrow-right"></i></a>
+        <a href="<?= APP_URL ?>/laporan?tab=jurnal" style="display: block; text-align: center; margin-top: 15px; font-size: 0.85rem; color: var(--primary); font-weight: 600;">Lihat Semua Jurnal <i class="fas fa-arrow-right"></i></a>
     </div>
 </div>
 

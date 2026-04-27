@@ -34,6 +34,21 @@ MOPI adalah aplikasi berbasis web dengan tampilan *mobile-first* yang dirancang 
 
 ---
 
+## ⚙️ Persyaratan Sistem (System Requirements)
+
+Untuk memastikan aplikasi berjalan dengan sempurna, pastikan server atau *hosting* Anda telah memenuhi persyaratan berikut:
+
+- **PHP Version**: Minimal PHP 7.4 (Sangat direkomendasikan PHP 8.0 atau lebih baru)
+- **Ekstensi PHP yang Wajib Diaktifkan**:
+  - `pdo_mysql` : Untuk koneksi dan interaksi database yang aman.
+  - `gd` : Wajib aktif untuk fitur *image processing* (melakukan kompresi JPG dan reduksi dimensi otomatis sebesar 20% saat siswa mengunggah foto jurnal).
+  - `zip`, `xml`, `gd` : Dibutuhkan oleh pustaka *PhpSpreadsheet* agar dapat membaca format Excel (`.xlsx`) saat fitur Import Data digunakan.
+- **Pengaturan Server (`php.ini`)**:
+  - `allow_url_fopen = On` : Wajib disetel *On* agar fungsi `file_get_contents()` dapat memverifikasi token API dari Google saat menggunakan fitur **Login with Google**.
+  - `upload_max_filesize` dan `post_max_size` : Disarankan disetel ke angka yang memadai (misal: `20M`) untuk memfasilitasi unggahan file tugas, jurnal, dan logo sekolah.
+
+---
+
 ## 🚀 Panduan Instalasi & Deploy
 
 ### 1. Download & Persiapan Library

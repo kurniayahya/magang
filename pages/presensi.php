@@ -125,6 +125,7 @@ if (isset($_GET['msg'])) {
             </div>
             <?php endforeach; ?>
         </div>
+        <a href="<?= APP_URL ?>/laporan?tab=absensi" style="display: block; text-align: center; margin-top: 15px; font-size: 0.85rem; color: var(--primary); font-weight: 600;">Lihat Semua Presensi <i class="fas fa-arrow-right"></i></a>
     </div>
 </div>
 
