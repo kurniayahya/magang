@@ -1,6 +1,6 @@
 # Database and environment sensitive info
 config/database.php
-
+.env
 # User uploads
 uploads/*
 !uploads/.gitkeep

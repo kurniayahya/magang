@@ -74,13 +74,16 @@ if ($user['role'] === 'admin' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $db->prepare("UPDATE sekolah SET nama = ?, alamat = ?, telepon = ? {$logo_sql} WHERE id = ?");
     $stmt->execute($params);
 
-    // Update config/database.php to reflect the new SCHOOL_NAME constant
-    $configFile = __DIR__ . '/../config/database.php';
-    if (file_exists($configFile) && is_writable($configFile)) {
-        $content = file_get_contents($configFile);
-        // Regex to replace define('SCHOOL_NAME', '...');
-        $content = preg_replace("/define\('SCHOOL_NAME',\s*'.*?'\);/", "define('SCHOOL_NAME', '" . addslashes($nama_sekolah) . "');", $content);
-        file_put_contents($configFile, $content);
+    // Update .env to reflect the new SCHOOL_NAME constant
+    $envFile = __DIR__ . '/../.env';
+    if (file_exists($envFile) && is_writable($envFile)) {
+        $content = file_get_contents($envFile);
+        if (preg_match("/^SCHOOL_NAME=.*$/m", $content)) {
+            $content = preg_replace("/^SCHOOL_NAME=.*$/m", 'SCHOOL_NAME="' . addslashes($nama_sekolah) . '"', $content);
+        } else {
+            $content .= "\nSCHOOL_NAME=\"" . addslashes($nama_sekolah) . "\"";
+        }
+        file_put_contents($envFile, $content);
     }
 
     header("Location: " . APP_URL . "/profil?success=1");

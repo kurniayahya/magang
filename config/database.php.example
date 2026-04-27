@@ -1,21 +1,33 @@
 <?php
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'magang');
-define('APP_NAME', 'MOPI PKL');
-define('SCHOOL_NAME', 'SMK Negeri 1 Kota Contoh'); // Ganti dengan nama sekolah Anda
-define('SCHOOL_ID', 1);                            // ID sekolah di tabel sekolah
-
-// APP_URL otomatis — tidak perlu diubah saat pindah hosting
-if (!defined('APP_URL')) {
-    $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host     = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $docRoot  = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
-    $appRoot  = rtrim(str_replace('\\', '/', dirname(__DIR__)), '/');
-    $subPath  = str_replace($docRoot, '', $appRoot);
-    define('APP_URL', $scheme . '://' . $host . $subPath);
+$envPath = __DIR__ . '/../.env';
+if (file_exists($envPath)) {
+    $envVars = parse_ini_file($envPath);
+    if ($envVars) {
+        foreach ($envVars as $key => $value) {
+            putenv("$key=$value");
+            $_ENV[$key] = $value;
+        }
+    }
 }
+
+function get_env_var($key, $default = '') {
+    $val = getenv($key);
+    if ($val === false && isset($_ENV[$key])) {
+        $val = $_ENV[$key];
+    }
+    return $val !== false ? $val : $default;
+}
+
+define('DB_HOST', get_env_var('DB_HOST', 'localhost'));
+define('DB_USER', get_env_var('DB_USER', 'root'));
+define('DB_PASS', get_env_var('DB_PASS', ''));
+define('DB_NAME', get_env_var('DB_NAME', 'magang'));
+define('APP_NAME', get_env_var('APP_NAME', 'MOPI PKL'));
+define('SCHOOL_NAME', get_env_var('SCHOOL_NAME', 'SMK Negeri 1 Kota Contoh'));
+define('SCHOOL_ID', (int)get_env_var('SCHOOL_ID', 1));
+define('GOOGLE_CLIENT_ID', get_env_var('GOOGLE_CLIENT_ID', ''));
+
+define('APP_URL', rtrim(get_env_var('APP_URL', 'http://localhost/magang'), '/'));
 
 define('UPLOAD_PATH', __DIR__ . '/../uploads/');
 define('UPLOAD_URL', APP_URL . '/uploads/');
