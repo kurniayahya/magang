@@ -1,0 +1,14 @@
+# Database and environment sensitive info
+config/database.php
+
+# User uploads
+uploads/*
+!uploads/.gitkeep
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/

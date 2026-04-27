@@ -1,0 +1,10 @@
+RewriteEngine On
+RewriteBase /magang/
+
+# Redirect trailing slashes
+RewriteRule ^(.*)/$ $1 [L,R=301]
+
+# Router
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]
