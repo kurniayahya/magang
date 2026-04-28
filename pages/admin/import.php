@@ -14,7 +14,7 @@ $db   = getDB();
 $msg  = '';
 $err  = '';
 $preview = [];
-$importType = $_GET['type'] ?? 'siswa'; // siswa | guru
+$importType = $_GET['type'] ?? 'siswa'; // siswa | guru | tempat
 
 // --- Download Template ---
 if (isset($_GET['download'])) {
@@ -59,6 +59,10 @@ if (isset($_GET['download'])) {
         $sheet4->getColumnDimension('B')->setAutoSize(true);
         
         $spreadsheet->setActiveSheetIndex(0); // Go back to main sheet
+    } elseif ($type === 'tempat') {
+        $sheet->setTitle('Template Tempat PKL');
+        $headers = ['nama','alamat','telepon','email','latitude','longitude','radius_meter','nama_pembimbing','bidang_usaha'];
+        $examples = ['PT Mopi Tech','Jl. Mopi No. 1 Jakarta','08123456789','info@mopi.id','-6.200000','106.816666','100','Budi Santoso','Teknologi'];
     } else {
         $sheet->setTitle('Template Guru');
         $headers = ['nama','email','password','nip','kode'];
@@ -107,62 +111,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['xlsx_file'])) {
                 if (empty(array_filter($row))) continue; // skip baris kosong
                 $data = array_combine($headers, $row);
 
-                $email = trim($data['email'] ?? '');
-                $nama  = trim($data['nama'] ?? '');
-                if (!$email || !$nama) { $skipped++; continue; }
-
-                // Cek duplikat email
-                $chk = $db->prepare("SELECT id FROM users WHERE email=?");
-                $chk->execute([$email]);
-                if ($chk->fetch()) {
-                    $errors[] = "Baris " . ($i+2) . ": Email <b>{$email}</b> sudah ada, dilewati.";
-                    $skipped++;
-                    continue;
-                }
-
-                $hash = hashPassword($data['password'] ?? 'password');
-                $role = ($importType === 'siswa') ? 'siswa' : 'guru';
-
-                $stmt = $db->prepare("INSERT INTO users (nama,email,password,role,aktif) VALUES (?,?,?,?,1)");
-                $stmt->execute([$nama, $email, $hash, $role]);
-                $newId = $db->lastInsertId();
-
-                if ($importType === 'siswa') {
-                    // Resolve kode_jurusan to id
-                    $jurusanId = null;
-                    if (!empty($data['kode_jurusan'])) {
-                        $stmtJ = $db->prepare("SELECT id FROM jurusan WHERE kode = ?");
-                        $stmtJ->execute([$data['kode_jurusan']]);
-                        $jurusanId = $stmtJ->fetchColumn() ?: null;
-                    }
+                if ($importType === 'tempat') {
+                    $nama = trim($data['nama'] ?? '');
+                    if (!$nama) { $skipped++; continue; }
                     
-                    // Resolve kode_guru to id
-                    $guruUserId = null;
-                    if (!empty($data['kode_guru'])) {
-                        $stmtG = $db->prepare("SELECT user_id FROM guru WHERE kode = ?");
-                        $stmtG->execute([$data['kode_guru']]);
-                        $guruUserId = $stmtG->fetchColumn() ?: null;
+                    $stmt = $db->prepare("INSERT INTO tempat_pkl (nama,alamat,telepon,email,latitude,longitude,radius_meter,nama_pembimbing,bidang_usaha) VALUES (?,?,?,?,?,?,?,?,?)");
+                    $stmt->execute([
+                        $nama,
+                        $data['alamat'] ?? null,
+                        $data['telepon'] ?? null,
+                        $data['email'] ?? null,
+                        !empty($data['latitude']) ? (float)str_replace(',', '.', $data['latitude']) : null,
+                        !empty($data['longitude']) ? (float)str_replace(',', '.', $data['longitude']) : null,
+                        isset($data['radius_meter']) && $data['radius_meter'] !== '' ? (int)$data['radius_meter'] : 100,
+                        $data['nama_pembimbing'] ?? null,
+                        $data['bidang_usaha'] ?? null
+                    ]);
+                    $imported++;
+                } else {
+                    $email = trim($data['email'] ?? '');
+                    $nama  = trim($data['nama'] ?? '');
+                    if (!$email || !$nama) { $skipped++; continue; }
+
+                    // Cek duplikat email
+                    $chk = $db->prepare("SELECT id FROM users WHERE email=?");
+                    $chk->execute([$email]);
+                    if ($chk->fetch()) {
+                        $errors[] = "Baris " . ($i+2) . ": Email <b>{$email}</b> sudah ada, dilewati.";
+                        $skipped++;
+                        continue;
                     }
 
-                    $s = $db->prepare("INSERT INTO siswa (user_id,nis,kelas,jurusan_id,sekolah_id,tempat_pkl_id,guru_pembimbing_id,tanggal_mulai,tanggal_selesai,total_hari_pkl,tahun_pkl) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
-                    $s->execute([
-                        $newId,
-                        $data['nis'] ?? null,
-                        $data['kelas'] ?? null,
-                        $jurusanId,
-                        SCHOOL_ID,
-                        (int)($data['tempat_pkl_id'] ?? 0) ?: null,
-                        $guruUserId,
-                        $data['tanggal_mulai'] ?? null,
-                        $data['tanggal_selesai'] ?? null,
-                        (int)($data['total_hari_pkl'] ?? 90),
-                        $data['tahun_pkl'] ?? null
-                    ]);
-                } else {
-                    $g = $db->prepare("INSERT INTO guru (user_id,nip,kode,sekolah_id) VALUES (?,?,?,?)");
-                    $g->execute([$newId, $data['nip'] ?? null, $data['kode'] ?? null, SCHOOL_ID]);
+                    $hash = hashPassword($data['password'] ?? 'password');
+                    $role = ($importType === 'siswa') ? 'siswa' : 'guru';
+
+                    $stmt = $db->prepare("INSERT INTO users (nama,email,password,role,aktif) VALUES (?,?,?,?,1)");
+                    $stmt->execute([$nama, $email, $hash, $role]);
+                    $newId = $db->lastInsertId();
+
+                    if ($importType === 'siswa') {
+                        // Resolve kode_jurusan to id
+                        $jurusanId = null;
+                        if (!empty($data['kode_jurusan'])) {
+                            $stmtJ = $db->prepare("SELECT id FROM jurusan WHERE kode = ?");
+                            $stmtJ->execute([$data['kode_jurusan']]);
+                            $jurusanId = $stmtJ->fetchColumn() ?: null;
+                        }
+                        
+                        // Resolve kode_guru to id
+                        $guruUserId = null;
+                        if (!empty($data['kode_guru'])) {
+                            $stmtG = $db->prepare("SELECT user_id FROM guru WHERE kode = ?");
+                            $stmtG->execute([$data['kode_guru']]);
+                            $guruUserId = $stmtG->fetchColumn() ?: null;
+                        }
+
+                        $s = $db->prepare("INSERT INTO siswa (user_id,nis,kelas,jurusan_id,sekolah_id,tempat_pkl_id,guru_pembimbing_id,tanggal_mulai,tanggal_selesai,total_hari_pkl,tahun_pkl) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+                        $s->execute([
+                            $newId,
+                            $data['nis'] ?? null,
+                            $data['kelas'] ?? null,
+                            $jurusanId,
+                            SCHOOL_ID,
+                            (int)($data['tempat_pkl_id'] ?? 0) ?: null,
+                            $guruUserId,
+                            $data['tanggal_mulai'] ?? null,
+                            $data['tanggal_selesai'] ?? null,
+                            (int)($data['total_hari_pkl'] ?? 90),
+                            $data['tahun_pkl'] ?? null
+                        ]);
+                    } else {
+                        $g = $db->prepare("INSERT INTO guru (user_id,nip,kode,sekolah_id) VALUES (?,?,?,?)");
+                        $g->execute([$newId, $data['nip'] ?? null, $data['kode'] ?? null, SCHOOL_ID]);
+                    }
+                    $imported++;
                 }
-                $imported++;
             }
 
             $msg = "Import selesai: <b>{$imported}</b> berhasil, <b>{$skipped}</b> dilewati.";
@@ -215,6 +238,13 @@ include __DIR__ . '/../../includes/header.php';
               box-shadow:<?= $importType==='guru'?'var(--shadow-sm)':'' ?>;">
         <i class="fas fa-chalkboard-teacher"></i> Guru
     </a>
+    <a href="?route=admin/import&type=tempat"
+       style="flex:1;text-align:center;padding:10px;border-radius:12px;font-weight:600;font-size:0.9rem;text-decoration:none;
+              background:<?= $importType==='tempat'?'white':'transparent' ?>;
+              color:<?= $importType==='tempat'?'var(--primary)':'var(--text-muted)' ?>;
+              box-shadow:<?= $importType==='tempat'?'var(--shadow-sm)':'' ?>;">
+        <i class="fas fa-building"></i> Tempat PKL
+    </a>
 </div>
 
 <!-- Download Template -->
@@ -260,11 +290,17 @@ include __DIR__ . '/../../includes/header.php';
                 <b>Opsional:</b> password (default: <i>password</i>), total_hari_pkl (default: 90), tahun_pkl<br>
                 <b>Otomatis:</b> sekolah diisi dari konfigurasi sistem
             </div>
-            <?php else: ?>
+            <?php elseif ($importType === 'guru'): ?>
             <div style="font-size:0.75rem;line-height:1.8;color:var(--text-muted);">
                 <b>Wajib:</b> nama, email<br>
                 <b>Opsional:</b> password (default: <i>password</i>), nip, kode<br>
                 <b>Otomatis:</b> sekolah diisi dari konfigurasi sistem
+            </div>
+            <?php else: ?>
+            <div style="font-size:0.75rem;line-height:1.8;color:var(--text-muted);">
+                <b>Wajib:</b> nama<br>
+                <b>Opsional:</b> alamat, telepon, email, latitude, longitude, radius_meter, nama_pembimbing, bidang_usaha<br>
+                <b>Catatan:</b> Kosongkan baris yang tidak digunakan. Default radius adalah 100 meter.
             </div>
             <?php endif; ?>
         </div>

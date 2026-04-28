@@ -80,9 +80,14 @@ include __DIR__ . '/../../includes/header.php';
 <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> <?= $err ?></div>
 <?php endif; ?>
 
-<button class="btn btn-primary" onclick="openAddSheet()" style="margin-bottom:15px;">
-    <i class="fas fa-plus"></i> Tambah Tempat PKL
-</button>
+<div style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="openAddSheet()" style="width:auto;flex:1;">
+        <i class="fas fa-plus"></i> Tambah Tempat PKL
+    </button>
+    <a href="?route=admin/import&type=tempat" class="btn btn-outline" style="width:auto;flex:1;text-align:center;">
+        <i class="fas fa-file-excel" style="color:#1D6F42;"></i> Import Excel
+    </a>
+</div>
 
 <!-- Daftar Tempat PKL -->
 <?php foreach ($tempatList as $tp): ?>
