@@ -33,18 +33,7 @@
             <h1 class="header-title"><?= $pageTitle ?></h1>
         <?php endif; ?>
     </div>
-    <div class="header-right">
-        <?php
-        $notifCount = getUnreadNotifCount($_SESSION['user_id']);
-        $chatCount = getUnreadChatCount($_SESSION['user_id']);
-        ?>
-        <a href="<?= APP_URL ?>/chat" class="header-icon-btn <?= $chatCount > 0 ? 'has-badge' : '' ?>" data-badge="<?= $chatCount ?>">
-            <i class="fas fa-comment-dots"></i>
-        </a>
-        <a href="<?= APP_URL ?>/notifikasi" class="header-icon-btn <?= $notifCount > 0 ? 'has-badge' : '' ?>" data-badge="<?= $notifCount ?>">
-            <i class="fas fa-bell"></i>
-        </a>
-    </div>
+
 </header>
 <?php endif; ?>
 

@@ -201,11 +201,14 @@ if (!$route || $route === 'login') {
         'guru_dashboard'    => 'pages/guru_dashboard.php',
         'guru/validasi'     => 'pages/guru/validasi_jurnal.php',
         'guru/peta'         => 'pages/guru/tempat_pkl_map.php',
+        'guru/rekap'        => 'pages/guru/rekap.php',
         // Admin
         'admin_dashboard'   => 'pages/admin_dashboard.php',
         'admin/users'       => 'pages/admin/users.php',
         'admin/import'      => 'pages/admin/import.php',
         'admin/tempat_pkl'  => 'pages/admin/tempat_pkl.php',
+        'admin/rekap'       => 'pages/admin/rekap.php',
+        'admin/pengaturan'  => 'pages/admin/pengaturan.php',
         // Shared
         'logout'            => 'logout.php',
     ];

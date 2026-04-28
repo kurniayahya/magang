@@ -22,7 +22,7 @@ $jurnalPending = $db->query("SELECT COUNT(*) FROM jurnal WHERE status = 'terkiri
 </div>
 
 <!-- Stats -->
-<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:-25px;padding:0 2px;margin-bottom:15px;">
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:15px;padding:0 2px;margin-bottom:15px;">
     <div class="card" style="margin-bottom:0;padding:12px;text-align:center;">
         <div style="font-size:1.8rem;font-weight:800;color:var(--primary);"><?= $totalSiswa ?></div>
         <div style="font-size:0.7rem;color:var(--text-muted);font-weight:600;margin-top:3px;">TOTAL SISWA</div>
@@ -62,6 +62,18 @@ $jurnalPending = $db->query("SELECT COUNT(*) FROM jurnal WHERE status = 'terkiri
                 <i class="fas fa-building-flag"></i>
             </div>
             <span class="menu-label">Tempat PKL</span>
+        </a>
+        <a href="<?= APP_URL ?>/admin/rekap" class="menu-item">
+            <div class="menu-icon" style="background:linear-gradient(135deg,#00c6ff,#0072ff);">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+            <span class="menu-label">Rekap Laporan</span>
+        </a>
+        <a href="<?= APP_URL ?>/admin/pengaturan" class="menu-item">
+            <div class="menu-icon" style="background:linear-gradient(135deg,#b2bec3,#636e72);">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <span class="menu-label">Pengaturan</span>
         </a>
         <a href="<?= APP_URL ?>/profil" class="menu-item">
             <div class="menu-icon" style="background:linear-gradient(135deg,#a18cd1,#fbc2eb);">

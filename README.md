@@ -5,21 +5,26 @@ MOPI adalah aplikasi berbasis web dengan tampilan *mobile-first* yang dirancang 
 ## ✨ Fitur Utama (Berdasarkan Role)
 
 ### 🧑‍🎓 Siswa
-- **Presensi GPS**: Check-in dan check-out menggunakan peta Leaflet interaktif.
+- **Presensi GPS (Masuk & Pulang)**: Dua tombol terpisah — **Masuk** dan **Pulang** — menggunakan peta Leaflet interaktif untuk verifikasi lokasi secara real-time.
+- **WFA (Work From Anywhere)**: Siswa dapat mencentang opsi WFA jika tidak berada di lokasi PKL, dengan mengisi alasan yang wajib diisi.
+- **Validasi Radius**: Presensi hanya bisa dilakukan jika berada dalam radius yang ditentukan oleh admin. WFA mengabaikan radius.
+- **Validasi Jam**: Presensi Masuk dan Pulang hanya bisa dilakukan dalam rentang jam yang diatur admin.
 - **Jurnal Harian**: Input kegiatan harian yang dikirim langsung ke Guru Pembimbing.
 - **Dashboard & Progres**: Pantau statistik kehadiran dan jumlah hari efektif PKL.
-- **Portofolio**: Unggah dan kelola hasil kerja/dokumentasi selama di lapangan.
 
 ### 👨‍🏫 Guru Pembimbing
-- **Dashboard Monitoring**: Pantau seluruh siswa bimbingan dalam satu layar (jumlah hadir, jurnal pending).
-- **Validasi Jurnal**: Kemudahan melihat, menolak, atau memvalidasi jurnal harian siswa bimbingan (disertai catatan feedback).
-- **Peta Lokasi PKL**: Set titik absensi tempat PKL (Latitude, Longitude) menggunakan peta Leaflet (via drag marker / lokasi perangkat) agar siswa bisa presensi secara akurat.
+- **Dashboard Monitoring**: Pantau seluruh siswa bimbingan dalam satu layar.
+- **Validasi Jurnal**: Melihat, menolak, atau memvalidasi jurnal harian siswa bimbingan dengan catatan feedback.
+- **Rekap Laporan**: Lihat dan ekspor rekap presensi dan jurnal seluruh siswa bimbingan ke format Excel.
+- **Peta Lokasi PKL**: Pantau titik absensi tempat PKL siswa bimbingan.
 
 ### 🛡️ Administrator
-- **Dashboard Statistik**: Pantau total kehadiran, jumlah siswa, dan notifikasi sistem.
+- **Dashboard Statistik**: Pantau total kehadiran, jumlah siswa, guru, dan jurnal pending.
 - **Kelola Pengguna (CRUD)**: Manajemen data Siswa, Guru, dan Admin.
-- **Import Massal Excel (XLSX)**: Import data ratusan Siswa dan Guru dalam sekali klik dengan format `.xlsx`.
-- **Manajemen Tempat PKL**: Data DU/DI dan titik kordinat maps tersentralisasi.
+- **Import Massal Excel (XLSX)**: Import data ratusan Siswa dan Guru dalam sekali klik.
+- **Manajemen Tempat PKL**: Data DU/DI dan titik koordinat GPS tersentralisasi dengan radius absensi yang dapat dikustomisasi.
+- **Rekap Laporan**: Lihat dan ekspor rekap presensi dan jurnal **semua siswa** dengan filter berdasarkan jurusan ke format Excel.
+- **Pengaturan Jam Presensi**: Atur rentang jam Masuk dan rentang jam Pulang yang berlaku global untuk seluruh siswa.
 
 ---
 
@@ -27,82 +32,64 @@ MOPI adalah aplikasi berbasis web dengan tampilan *mobile-first* yang dirancang 
 
 - **Backend**: PHP (Native)
 - **Database**: MySQL / MariaDB
-- **Library Tambahan**: 
-  - `PhpSpreadsheet` (Import Excel/XLSX)
-  - `Leaflet.js` & `OpenStreetMap` (Gratis, Interaktif Map tanpa API Key)
+- **Library Tambahan**:
+  - `PhpSpreadsheet` (Import & Export Excel/XLSX)
+  - `Leaflet.js` & `OpenStreetMap` (Peta Interaktif tanpa API Key)
 - **Frontend**: Vanilla CSS (Modern UI), JS, FontAwesome 6, Google Fonts
 
 ---
 
-## ⚙️ Persyaratan Sistem (System Requirements)
+## ⚙️ Persyaratan Sistem
 
-Untuk memastikan aplikasi berjalan dengan sempurna, pastikan server atau *hosting* Anda telah memenuhi persyaratan berikut:
-
-- **PHP Version**: Minimal PHP 7.4 (Sangat direkomendasikan PHP 8.0 atau lebih baru)
-- **Ekstensi PHP yang Wajib Diaktifkan**:
-  - `pdo_mysql` : Untuk koneksi dan interaksi database yang aman.
-  - `gd` : Wajib aktif untuk fitur *image processing* (melakukan kompresi JPG dan reduksi dimensi otomatis sebesar 20% saat siswa mengunggah foto jurnal).
-  - `zip`, `xml`, `gd` : Dibutuhkan oleh pustaka *PhpSpreadsheet* agar dapat membaca format Excel (`.xlsx`) saat fitur Import Data digunakan.
-- **Pengaturan Server (`php.ini`)**:
-  - `allow_url_fopen = On` : Wajib disetel *On* agar fungsi `file_get_contents()` dapat memverifikasi token API dari Google saat menggunakan fitur **Login with Google**.
-  - `upload_max_filesize` dan `post_max_size` : Disarankan disetel ke angka yang memadai (misal: `20M`) untuk memfasilitasi unggahan file tugas, jurnal, dan logo sekolah.
+- **PHP Version**: Minimal PHP 7.4 (Direkomendasikan PHP 8.0+)
+- **Ekstensi PHP Wajib**: `pdo_mysql`, `gd`, `zip`, `xml`
+- **Pengaturan `php.ini`**: `upload_max_filesize` dan `post_max_size` disarankan minimal `20M`.
 
 ---
 
 ## 🚀 Panduan Instalasi & Deploy
 
 ### 1. Download & Persiapan Library
-Pastikan Anda sudah menginstal **Composer** di komputer/server Anda.
 ```bash
-# Clone atau copy project ke folder server (misal: htdocs/magang)
 cd d:\htdocs\magang
-
-# Install dependency untuk fitur Import Excel
 composer install
 ```
 
 ### 2. Persiapan Database
 1. Buat database baru bernama `magang` di MySQL.
-2. Import file `database.sql` yang ada di direktori project ke dalam database tersebut.
-   *(File ini sudah berisi skema lengkap dan data dummy untuk testing)*
-
-### 3. Konfigurasi Aplikasi
-1. Duplikat/copy file `.env.example` menjadi `.env` di direktori utama (root).
-2. Sesuaikan nilai konfigurasi di dalam file `.env`:
-   ```env
-   APP_NAME="MOPI PKL"
-   APP_URL="https://magang.domain-anda.com" # Wajib disesuaikan dengan URL asli aplikasi Anda
-   SCHOOL_NAME="SMK Negeri 1 Kota Contoh"
-   SCHOOL_ID=1
-
-   DB_HOST="localhost"
-   DB_USER="root"
-   DB_PASS="password_database_anda"
-   DB_NAME="magang"
+2. Import file `database.sql` ke dalam database tersebut.
+3. **Jalankan migrasi** untuk menambahkan kolom terbaru:
+   ```
+   http://localhost/magang/migrate.php
    ```
 
+### 3. Konfigurasi Aplikasi
+Copy `.env.example` menjadi `.env` dan sesuaikan isinya:
+```env
+APP_NAME="MOPI PKL"
+APP_URL="https://magang.domain-anda.com"
+SCHOOL_NAME="SMK Negeri 1 Kota Contoh"
+SCHOOL_ID=1
+
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="password_database_anda"
+DB_NAME="magang"
+```
+
 ### 4. Konfigurasi Web Server (Routing)
-Aplikasi ini menggunakan sistem *Single Entry Point* (seluruh rute masuk melalui `index.php`).
+**Apache (XAMPP, cPanel):** Konfigurasi sudah ada di `.htaccess`. Sesuaikan `RewriteBase` jika dipasang di subfolder.
 
-**Untuk Pengguna Apache (cPanel, XAMPP, dll):**
-- Konfigurasi sudah tersedia pada file `.htaccess`.
-- Jika Anda menaruh aplikasi di **Root Domain** (misal: `https://magang.domain.com`), atur `RewriteBase /` di dalam `.htaccess`.
-- Jika ditaruh di **Sub-Folder** (misal: `https://domain.com/magang`), atur `RewriteBase /magang/` di `.htaccess`.
-
-**Untuk Pengguna NGINX (CloudPanel, VPS, dll):**
-- Server NGINX mengabaikan file `.htaccess`. Anda perlu mengedit blok konfigurasi *VHost* aplikasi Anda.
-- Tambahkan kode berikut pada bagian `location /`:
-  ```nginx
-  location / {
-      try_files $uri $uri/ /index.php?route=$uri&$args;
-  }
-  ```
+**NGINX:** Tambahkan pada konfigurasi VHost:
+```nginx
+location / {
+    try_files $uri $uri/ /index.php?route=$uri&$args;
+}
+```
 
 ---
 
 ## 🔑 Akun Login (Demo)
-
-Gunakan akun berikut untuk mencoba fitur-fitur di aplikasi (semua password default adalah `password`):
 
 | Role | Nama | Email | Password |
 | :--- | :--- | :--- | :--- |
@@ -112,8 +99,6 @@ Gunakan akun berikut untuk mencoba fitur-fitur di aplikasi (semua password defau
 | **Siswa** | Andi Pratama | `andi@mopi.id` | `password` |
 | **Siswa** | Budi Santoso | `budi@mopi.id` | `password` |
 
-*(Catatan: Andi dan Budi adalah siswa bimbingan dari Pak Budi. Silakan login sebagai Andi untuk mengirim jurnal, lalu login sebagai Pak Budi untuk memvalidasi jurnal tersebut).*
-
 ---
 
 ## 📁 Struktur Folder
@@ -122,15 +107,18 @@ Gunakan akun berikut untuk mencoba fitur-fitur di aplikasi (semua password defau
 /magang
 ├── assets/             # File statis (CSS, JS, Images)
 ├── config/             # Konfigurasi database (database.php)
+├── docs/               # Panduan pengguna (Admin, Guru, Siswa)
 ├── includes/           # Komponen reusable (Header, Footer, Functions)
-├── pages/              # Halaman fitur aplikasi (dipisah berdasarkan folder admin/guru/siswa)
-├── vendor/             # Folder hasil instalasi composer (PhpSpreadsheet)
+├── pages/              # Halaman fitur (admin/, guru/, siswa/)
+├── vendor/             # Hasil instalasi Composer (PhpSpreadsheet)
 ├── uploads/            # Penyimpanan file (foto jurnal & presensi)
-├── database.sql        # Skema database & data dummy (siap pakai)
+├── database.sql        # Skema database & data dummy
+├── migrate.php         # Script migrasi database (update kolom baru)
 ├── index.php           # Entry Point (Routing & Login)
 ├── .env                # File Konfigurasi (Database, URL, Identitas)
 └── .htaccess           # Routing Server (Apache)
 ```
 
 ---
+
 Dibuat untuk mempermudah administrasi dan monitoring Praktik Kerja Lapangan (PKL) Siswa secara modern dan terintegrasi.

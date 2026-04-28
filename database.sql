@@ -49,6 +49,10 @@ CREATE TABLE sekolah (
     telepon VARCHAR(20),
     logo VARCHAR(255),
     tahun_aktif VARCHAR(4) DEFAULT '2024',
+    jam_masuk_mulai TIME DEFAULT '06:00:00',
+    jam_masuk_selesai TIME DEFAULT '09:00:00',
+    jam_pulang_mulai TIME DEFAULT '15:00:00',
+    jam_pulang_selesai TIME DEFAULT '18:00:00',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -143,6 +147,8 @@ CREATE TABLE presensi (
     lat_keluar DECIMAL(10, 8),
     lng_keluar DECIMAL(11, 8),
     status ENUM('hadir','izin','sakit','alpha') DEFAULT 'hadir',
+    is_wfa TINYINT(1) DEFAULT 0,
+    alasan_wfa TEXT,
     keterangan TEXT,
     foto_masuk VARCHAR(255),
     foto_keluar VARCHAR(255),

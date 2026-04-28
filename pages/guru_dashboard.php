@@ -33,7 +33,7 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <!-- Stats -->
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:-25px;padding:0 2px;margin-bottom:15px;">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:15px;padding:0 2px;margin-bottom:15px;">
     <div class="card" style="margin-bottom:0;padding:12px;text-align:center;">
         <div style="font-size:1.6rem;font-weight:800;color:var(--primary);"><?= $totalSiswa ?></div>
         <div style="font-size:0.65rem;color:var(--text-muted);font-weight:600;margin-top:3px;">TOTAL SISWA</div>
@@ -49,7 +49,7 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <!-- Shortcut Menu -->
-<div class="menu-grid" style="grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:20px;">
+<div class="menu-grid" style="grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px;">
     <a href="<?= APP_URL ?>/guru/validasi" class="menu-item">
         <div class="menu-icon" style="background:linear-gradient(135deg,#a18cd1,#fbc2eb);position:relative;">
             <i class="fas fa-clipboard-check"></i>
@@ -66,6 +66,12 @@ include __DIR__ . '/../includes/header.php';
             <i class="fas fa-map-location-dot"></i>
         </div>
         <span class="menu-label">Peta PKL</span>
+    </a>
+    <a href="<?= APP_URL ?>/guru/rekap" class="menu-item">
+        <div class="menu-icon" style="background:linear-gradient(135deg,#00c6ff,#0072ff);">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+        <span class="menu-label">Rekap</span>
     </a>
     <a href="<?= APP_URL ?>/profil" class="menu-item">
         <div class="menu-icon" style="background:linear-gradient(135deg,#4facfe,#00f2fe);">

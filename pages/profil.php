@@ -136,16 +136,7 @@ include __DIR__ . '/../includes/header.php';
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Administrator Sistem</p>
         <?php endif; ?>
         
-        <?php if ($user['role'] === 'siswa'): ?>
-        <div style="display: flex; gap: 10px; padding: 0 10px;">
-            <button class="btn btn-primary" style="flex: 1; border-radius: 10px; font-size: 0.85rem;">
-                <i class="fas fa-edit"></i> Edit Profil
-            </button>
-            <a href="<?= APP_URL ?>/pengaturan" class="btn btn-outline" style="flex: 1; border-radius: 10px; font-size: 0.85rem;">
-                <i class="fas fa-cog"></i> Pengaturan
-            </a>
-        </div>
-        <?php endif; ?>
+    
     </div>
 
     <?php if ($user['role'] === 'siswa'): ?>

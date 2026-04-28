@@ -101,11 +101,29 @@ $totalPages = ceil($totalData / $limit);
                             </div>
                             <div class="activity-info">
                                 <div class="activity-name"><?= getHariNama($row['tanggal']) ?>, <?= formatTanggal($row['tanggal']) ?></div>
-                                <div class="activity-time"><?= $row['status'] == 'hadir' ? ($row['jam_masuk'] . ' - ' . ($row['jam_keluar'] ?? '--:--')) : ucfirst($row['status']) ?></div>
+                                <div class="activity-time">
+                                    <?php if ($row['status'] == 'hadir'): ?>
+                                        Masuk: <strong><?= substr($row['jam_masuk'] ?? '--:--', 0, 5) ?></strong>
+                                        &nbsp;|&nbsp;
+                                        Pulang: <strong><?= substr($row['jam_keluar'] ?? '--:--', 0, 5) ?></strong>
+                                    <?php else: ?>
+                                        <?= ucfirst($row['status']) ?>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                            <div style="font-size: 0.75rem; font-weight: 600; color: <?= $row['validasi'] == 'valid' ? 'var(--success)' : 'var(--warning)' ?>;">
-                                <?= strtoupper($row['validasi']) ?>
+                            <?php if ($row['jam_masuk'] && $row['jam_keluar']): 
+                                $menit = (strtotime($row['jam_keluar']) - strtotime($row['jam_masuk'])) / 60;
+                                $jam   = floor($menit / 60);
+                                $sisa  = $menit % 60;
+                            ?>
+                            <div style="text-align:right; font-size: 0.72rem; font-weight: 700; color: var(--primary); white-space:nowrap;">
+                                <?= $jam ?>j <?= $sisa ?>m
                             </div>
+                            <?php elseif ($row['is_wfa'] ?? false): ?>
+                            <div style="font-size: 0.68rem; font-weight: 700; background: var(--primary); color: white; padding: 2px 8px; border-radius: 12px; white-space:nowrap;">
+                                WFA
+                            </div>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                 <?php endforeach; ?>
