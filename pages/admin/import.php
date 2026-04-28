@@ -27,12 +27,42 @@ if (isset($_GET['download'])) {
 
     if ($type === 'siswa') {
         $sheet->setTitle('Template Siswa');
-        $headers = ['nama','email','password','nis','kelas','jurusan_id','tempat_pkl_id','guru_pembimbing_id','tanggal_mulai','tanggal_selesai','total_hari_pkl'];
-        $examples = ['Andi Pratama','andi@mopi.id','password','12345','XII TKR 1','1','1','1','2026-01-06','2026-04-04','90'];
+        $headers = ['nama','email','password','nis','kelas','kode_jurusan','tempat_pkl_id','kode_guru','tanggal_mulai','tanggal_selesai','total_hari_pkl','tahun_pkl'];
+        $examples = ['Andi Pratama','andi@mopi.id','password','12345','XII TKR 1','TKR','1','G-01','2026-01-06','2026-04-04','90','2024'];
+        
+        // Add Reference Sheets
+        $sheet2 = $spreadsheet->createSheet();
+        $sheet2->setTitle('Referensi Guru');
+        $sheet2->fromArray([['kode', 'nama']], null, 'A1');
+        $gurus = getDB()->query("SELECT guru.kode, users.nama FROM guru JOIN users ON guru.user_id = users.id")->fetchAll(PDO::FETCH_ASSOC);
+        $rowIdx = 2;
+        foreach($gurus as $g) { $sheet2->fromArray([$g['kode'], $g['nama']], null, "A$rowIdx"); $rowIdx++; }
+        $sheet2->getColumnDimension('A')->setAutoSize(true);
+        $sheet2->getColumnDimension('B')->setAutoSize(true);
+        
+        $sheet3 = $spreadsheet->createSheet();
+        $sheet3->setTitle('Referensi Tempat PKL');
+        $sheet3->fromArray([['id', 'nama']], null, 'A1');
+        $tempat = getDB()->query("SELECT id, nama FROM tempat_pkl")->fetchAll(PDO::FETCH_ASSOC);
+        $rowIdx = 2;
+        foreach($tempat as $t) { $sheet3->fromArray([$t['id'], $t['nama']], null, "A$rowIdx"); $rowIdx++; }
+        $sheet3->getColumnDimension('A')->setAutoSize(true);
+        $sheet3->getColumnDimension('B')->setAutoSize(true);
+        
+        $sheet4 = $spreadsheet->createSheet();
+        $sheet4->setTitle('Referensi Jurusan');
+        $sheet4->fromArray([['kode', 'nama']], null, 'A1');
+        $jurusan = getDB()->query("SELECT kode, nama FROM jurusan")->fetchAll(PDO::FETCH_ASSOC);
+        $rowIdx = 2;
+        foreach($jurusan as $j) { $sheet4->fromArray([$j['kode'], $j['nama']], null, "A$rowIdx"); $rowIdx++; }
+        $sheet4->getColumnDimension('A')->setAutoSize(true);
+        $sheet4->getColumnDimension('B')->setAutoSize(true);
+        
+        $spreadsheet->setActiveSheetIndex(0); // Go back to main sheet
     } else {
         $sheet->setTitle('Template Guru');
-        $headers = ['nama','email','password','nip'];
-        $examples = ['Pak Budi','budi@mopi.id','password','19800101200001001'];
+        $headers = ['nama','email','password','nip','kode'];
+        $examples = ['Pak Budi','budi@mopi.id','password','19800101200001001','G-01'];
     }
 
     $sheet->fromArray([$headers, $examples], null, 'A1');
@@ -98,22 +128,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['xlsx_file'])) {
                 $newId = $db->lastInsertId();
 
                 if ($importType === 'siswa') {
-                    $s = $db->prepare("INSERT INTO siswa (user_id,nis,kelas,jurusan_id,sekolah_id,tempat_pkl_id,guru_pembimbing_id,tanggal_mulai,tanggal_selesai,total_hari_pkl) VALUES (?,?,?,?,?,?,?,?,?,?)");
+                    // Resolve kode_jurusan to id
+                    $jurusanId = null;
+                    if (!empty($data['kode_jurusan'])) {
+                        $stmtJ = $db->prepare("SELECT id FROM jurusan WHERE kode = ?");
+                        $stmtJ->execute([$data['kode_jurusan']]);
+                        $jurusanId = $stmtJ->fetchColumn() ?: null;
+                    }
+                    
+                    // Resolve kode_guru to id
+                    $guruUserId = null;
+                    if (!empty($data['kode_guru'])) {
+                        $stmtG = $db->prepare("SELECT user_id FROM guru WHERE kode = ?");
+                        $stmtG->execute([$data['kode_guru']]);
+                        $guruUserId = $stmtG->fetchColumn() ?: null;
+                    }
+
+                    $s = $db->prepare("INSERT INTO siswa (user_id,nis,kelas,jurusan_id,sekolah_id,tempat_pkl_id,guru_pembimbing_id,tanggal_mulai,tanggal_selesai,total_hari_pkl,tahun_pkl) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
                     $s->execute([
                         $newId,
                         $data['nis'] ?? null,
                         $data['kelas'] ?? null,
-                        (int)($data['jurusan_id'] ?? 0) ?: null,
+                        $jurusanId,
                         SCHOOL_ID,
                         (int)($data['tempat_pkl_id'] ?? 0) ?: null,
-                        (int)($data['guru_pembimbing_id'] ?? 0) ?: null,
+                        $guruUserId,
                         $data['tanggal_mulai'] ?? null,
                         $data['tanggal_selesai'] ?? null,
                         (int)($data['total_hari_pkl'] ?? 90),
+                        $data['tahun_pkl'] ?? null
                     ]);
                 } else {
-                    $g = $db->prepare("INSERT INTO guru (user_id,nip,sekolah_id) VALUES (?,?,?)");
-                    $g->execute([$newId, $data['nip'] ?? null, SCHOOL_ID]);
+                    $g = $db->prepare("INSERT INTO guru (user_id,nip,kode,sekolah_id) VALUES (?,?,?,?)");
+                    $g->execute([$newId, $data['nip'] ?? null, $data['kode'] ?? null, SCHOOL_ID]);
                 }
                 $imported++;
             }
@@ -208,15 +255,15 @@ include __DIR__ . '/../../includes/header.php';
             <?php if ($importType === 'siswa'): ?>
             <div style="font-size:0.75rem;line-height:1.8;color:var(--text-muted);">
                 <b>Wajib:</b> nama, email, nis, kelas<br>
-                <b>ID Referensi:</b> jurusan_id, tempat_pkl_id, guru_pembimbing_id<br>
+                <b>ID/Kode Referensi:</b> kode_jurusan, tempat_pkl_id, kode_guru<br>
                 <b>Tanggal:</b> tanggal_mulai, tanggal_selesai (format: YYYY-MM-DD)<br>
-                <b>Opsional:</b> password (default: <i>password</i>), total_hari_pkl (default: 90)<br>
+                <b>Opsional:</b> password (default: <i>password</i>), total_hari_pkl (default: 90), tahun_pkl<br>
                 <b>Otomatis:</b> sekolah diisi dari konfigurasi sistem
             </div>
             <?php else: ?>
             <div style="font-size:0.75rem;line-height:1.8;color:var(--text-muted);">
                 <b>Wajib:</b> nama, email<br>
-                <b>Opsional:</b> password (default: <i>password</i>), nip<br>
+                <b>Opsional:</b> password (default: <i>password</i>), nip, kode<br>
                 <b>Otomatis:</b> sekolah diisi dari konfigurasi sistem
             </div>
             <?php endif; ?>

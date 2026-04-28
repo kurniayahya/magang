@@ -44,10 +44,11 @@ if ($user['role'] === 'admin' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $nama_sekolah = sanitize($_POST['nama_sekolah'] ?? '');
     $alamat_sekolah = sanitize($_POST['alamat_sekolah'] ?? '');
     $telepon_sekolah = sanitize($_POST['telepon_sekolah'] ?? '');
+    $tahun_aktif = sanitize($_POST['tahun_aktif'] ?? '2024');
 
     // Handle File Upload
     $logo_sql = "";
-    $params = [$nama_sekolah, $alamat_sekolah, $telepon_sekolah];
+    $params = [$nama_sekolah, $alamat_sekolah, $telepon_sekolah, $tahun_aktif];
 
     if (!empty($_FILES['logo_sekolah']['name'])) {
         $uploadDir = UPLOAD_PATH;
@@ -71,7 +72,7 @@ if ($user['role'] === 'admin' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $params[] = SCHOOL_ID;
 
     // Update table sekolah
-    $stmt = $db->prepare("UPDATE sekolah SET nama = ?, alamat = ?, telepon = ? {$logo_sql} WHERE id = ?");
+    $stmt = $db->prepare("UPDATE sekolah SET nama = ?, alamat = ?, telepon = ?, tahun_aktif = ? {$logo_sql} WHERE id = ?");
     $stmt->execute($params);
 
     // Update .env to reflect the new SCHOOL_NAME constant
@@ -220,6 +221,10 @@ include __DIR__ . '/../includes/header.php';
                 <div class="form-group">
                     <label class="form-label">Nomor Telepon</label>
                     <input type="text" name="telepon_sekolah" class="form-control" value="<?= htmlspecialchars($sekolahInfo['telepon'] ?? '') ?>">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tahun Aktif PKL</label>
+                    <input type="number" name="tahun_aktif" class="form-control" value="<?= htmlspecialchars($sekolahInfo['tahun_aktif'] ?? '2024') ?>" min="2000" max="2100" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Logo Sekolah</label>

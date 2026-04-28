@@ -48,6 +48,7 @@ CREATE TABLE sekolah (
     alamat TEXT,
     telepon VARCHAR(20),
     logo VARCHAR(255),
+    tahun_aktif VARCHAR(4) DEFAULT '2024',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -107,6 +108,7 @@ CREATE TABLE siswa (
     tanggal_mulai DATE,
     tanggal_selesai DATE,
     total_hari_pkl INT DEFAULT 90,
+    tahun_pkl VARCHAR(4),
     status_pkl ENUM('aktif','selesai','tidak_aktif') DEFAULT 'aktif',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -122,6 +124,7 @@ CREATE TABLE guru (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     nip VARCHAR(30),
+    kode VARCHAR(10) UNIQUE,
     sekolah_id INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -272,8 +275,8 @@ CREATE TABLE pengaturan_notifikasi (
 -- ============================================
 
 -- Sekolah (id=1 harus sesuai dengan SCHOOL_ID di config/database.php)
-INSERT INTO sekolah (nama, alamat, telepon) VALUES
-('SMK Negeri 1 Kota Contoh', 'Jl. Pendidikan No. 1, Kota Contoh', '0211234567');
+INSERT INTO sekolah (nama, alamat, telepon, tahun_aktif) VALUES
+('SMK Negeri 1 Kota Contoh', 'Jl. Pendidikan No. 1, Kota Contoh', '0211234567', '2024');
 
 -- Jurusan
 INSERT INTO jurusan (nama, kode, sekolah_id) VALUES
@@ -305,16 +308,16 @@ INSERT INTO users (nama, email, password, role) VALUES
 -- Password default: password
 
 -- Guru (sekolah_id otomatis dari SCHOOL_ID=1)
-INSERT INTO guru (user_id, nip, sekolah_id) VALUES
-(5, '19800101200001001', 1),
-(6, '19850215200002002', 1);
+INSERT INTO guru (user_id, nip, kode, sekolah_id) VALUES
+(5, '19800101200001001', 'G-01', 1),
+(6, '19850215200002002', 'G-02', 1);
 
 -- Siswa (sekolah_id otomatis dari SCHOOL_ID=1, guru_pembimbing_id = users.id guru)
 -- Andi & Budi dibimbing Pak Budi (id=5), Siti dibimbing Bu Sari (id=6)
-INSERT INTO siswa (user_id, nis, kelas, jurusan_id, sekolah_id, tempat_pkl_id, guru_pembimbing_id, tanggal_mulai, tanggal_selesai, total_hari_pkl, status_pkl) VALUES
-(2, '12345', 'XII TKR 1', 1, 1, 1, 5, '2026-01-06', '2026-04-04', 90, 'aktif'),
-(3, '12346', 'XII RPL 1', 2, 1, 2, 5, '2026-01-06', '2026-04-04', 90, 'aktif'),
-(4, '12347', 'XII AKL 1', 4, 1, 3, 6, '2026-01-06', '2026-04-04', 90, 'aktif');
+INSERT INTO siswa (user_id, nis, kelas, jurusan_id, sekolah_id, tempat_pkl_id, guru_pembimbing_id, tanggal_mulai, tanggal_selesai, total_hari_pkl, tahun_pkl, status_pkl) VALUES
+(2, '12345', 'XII TKR 1', 1, 1, 1, 5, '2026-01-06', '2026-04-04', 90, '2024', 'aktif'),
+(3, '12346', 'XII RPL 1', 2, 1, 2, 5, '2026-01-06', '2026-04-04', 90, '2024', 'aktif'),
+(4, '12347', 'XII AKL 1', 4, 1, 3, 6, '2026-01-06', '2026-04-04', 90, '2024', 'aktif');
 
 -- Presensi dummy (siswa_id=1 = Andi, siswa_id=2 = Budi)
 INSERT INTO presensi (siswa_id, tanggal, jam_masuk, jam_keluar, lat_masuk, lng_masuk, status, validasi) VALUES

@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $newId = $db->lastInsertId();
 
                 if ($role === 'siswa') {
-                    $s = $db->prepare("INSERT INTO siswa (user_id,nis,kelas,jurusan_id,sekolah_id,tempat_pkl_id,guru_pembimbing_id,tanggal_mulai,tanggal_selesai,total_hari_pkl) VALUES (?,?,?,?,?,?,?,?,?,?)");
+                    $s = $db->prepare("INSERT INTO siswa (user_id,nis,kelas,jurusan_id,sekolah_id,tempat_pkl_id,guru_pembimbing_id,tanggal_mulai,tanggal_selesai,total_hari_pkl,tahun_pkl) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
                     $s->execute([
                         $newId,
                         sanitize($_POST['nis']),
@@ -45,12 +45,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_POST['tanggal_mulai'] ?: null,
                         $_POST['tanggal_selesai'] ?: null,
                         (int)($_POST['total_hari_pkl'] ?: 90),
+                        sanitize($_POST['tahun_pkl'] ?? '')
                     ]);
                 } elseif ($role === 'guru') {
-                    $g = $db->prepare("INSERT INTO guru (user_id,nip,sekolah_id) VALUES (?,?,?)");
-                    $g->execute([$newId, sanitize($_POST['nip']), SCHOOL_ID]);
+                    // Check duplicate kode
+                    $kode = sanitize($_POST['kode']);
+                    $chkKode = $db->prepare("SELECT id FROM guru WHERE kode = ?");
+                    $chkKode->execute([$kode]);
+                    if ($chkKode->fetch()) {
+                        $err = "Kode Guru sudah digunakan.";
+                        $db->prepare("DELETE FROM users WHERE id=?")->execute([$newId]); // rollback
+                    } else {
+                        $g = $db->prepare("INSERT INTO guru (user_id,nip,kode,sekolah_id) VALUES (?,?,?,?)");
+                        $g->execute([$newId, sanitize($_POST['nip']), $kode, SCHOOL_ID]);
+                    }
                 }
-                $msg = "User berhasil ditambahkan.";
+                if (!$err) {
+                    $msg = "User berhasil ditambahkan.";
+                }
             }
         } else {
             // Update user
@@ -92,15 +104,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if (isset($_GET['msg'])) $msg = $_GET['msg'];
 
 // Filter
+$sekolahInfo = $db->query("SELECT tahun_aktif FROM sekolah WHERE id = " . SCHOOL_ID)->fetch();
+$currentTahunAktif = $sekolahInfo['tahun_aktif'] ?? '2024';
+
 $filterRole = $_GET['role'] ?? '';
 $search     = sanitize($_GET['q'] ?? '');
+$filterTahun = sanitize($_GET['tahun'] ?? $currentTahunAktif);
 
 $where = "WHERE 1=1";
 $params = [];
 if ($filterRole) { $where .= " AND u.role=?"; $params[] = $filterRole; }
 if ($search)     { $where .= " AND (u.nama LIKE ? OR u.email LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
 
-$stmt = $db->prepare("SELECT u.*, s.nis, s.kelas FROM users u LEFT JOIN siswa s ON u.id = s.user_id $where ORDER BY u.role, u.nama LIMIT 100");
+// Apply filter tahun hanya untuk siswa
+if ($filterTahun && $filterRole !== 'admin' && $filterRole !== 'guru') {
+    $where .= " AND (u.role != 'siswa' OR s.tahun_pkl = ?)";
+    $params[] = $filterTahun;
+}
+
+$stmt = $db->prepare("SELECT u.*, s.nis, s.kelas, s.tahun_pkl, g.kode as guru_kode FROM users u LEFT JOIN siswa s ON u.id = s.user_id LEFT JOIN guru g ON u.id = g.user_id $where ORDER BY u.role, u.nama LIMIT 100");
 $stmt->execute($params);
 $users = $stmt->fetchAll();
 
@@ -126,6 +148,8 @@ include __DIR__ . '/../../includes/header.php';
         <input type="hidden" name="route" value="admin/users">
         <input type="text" name="q" class="form-control" style="flex:1;min-width:120px;padding:10px 14px;"
                placeholder="Cari nama / email..." value="<?= $search ?>">
+        <input type="text" name="tahun" class="form-control" style="width:100px;padding:10px 14px;"
+               placeholder="Tahun" value="<?= $filterTahun ?>">
         <select name="role" class="form-control" style="width:auto;padding:10px 14px;" onchange="this.form.submit()">
             <option value="">Semua Role</option>
             <?php foreach(['siswa','guru','admin'] as $r): ?>
@@ -156,6 +180,10 @@ include __DIR__ . '/../../includes/header.php';
                 </span>
                 <?php if ($u['nis']): ?>
                 <span style="font-size:0.65rem;padding:2px 8px;border-radius:20px;background:var(--border);color:var(--text-muted);">NIS: <?= $u['nis'] ?></span>
+                <span style="font-size:0.65rem;padding:2px 8px;border-radius:20px;background:#e0f2fe;color:#0369a1;">Tahun: <?= $u['tahun_pkl'] ?: '-' ?></span>
+                <?php endif; ?>
+                <?php if ($u['guru_kode']): ?>
+                <span style="font-size:0.65rem;padding:2px 8px;border-radius:20px;background:#fef3c7;color:#b45309;">Kode: <?= $u['guru_kode'] ?></span>
                 <?php endif; ?>
                 <span style="font-size:0.65rem;padding:2px 8px;border-radius:20px;background:<?= $u['aktif']?'#d1fae5':'#fee2e2' ?>;color:<?= $u['aktif']?'#065f46':'#991b1b' ?>;">
                     <?= $u['aktif'] ? 'Aktif' : 'Nonaktif' ?>
@@ -223,6 +251,10 @@ include __DIR__ . '/../../includes/header.php';
         <!-- Field Siswa -->
         <div id="fieldsSiswa">
             <div class="form-group">
+                <label class="form-label">Tahun PKL</label>
+                <input type="text" name="tahun_pkl" class="form-control" value="<?= htmlspecialchars($currentTahunAktif) ?>">
+            </div>
+            <div class="form-group">
                 <label class="form-label">NIS</label>
                 <input type="text" name="nis" class="form-control" placeholder="NIS siswa">
             </div>
@@ -276,6 +308,11 @@ include __DIR__ . '/../../includes/header.php';
 
         <!-- Field Guru -->
         <div id="fieldsGuru" style="display:none;">
+            <div class="form-group">
+                <label class="form-label">Kode Guru</label>
+                <input type="text" name="kode" class="form-control" placeholder="G-01" maxlength="10">
+                <small style="color:var(--text-muted);font-size:0.75rem;">Maksimal 10 karakter, harus unik.</small>
+            </div>
             <div class="form-group">
                 <label class="form-label">NIP</label>
                 <input type="text" name="nip" class="form-control" placeholder="NIP guru">

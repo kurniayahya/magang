@@ -3,7 +3,7 @@ RewriteEngine On
 # Sesuaikan RewriteBase:
 #   - Jika app di ROOT domain (https://domain.com/)  => RewriteBase /
 #   - Jika app di SUBFOLDER (https://domain.com/magang/) => RewriteBase /magang/
-RewriteBase /
+RewriteBase /magang/
 
 # Redirect trailing slashes
 RewriteRule ^(.*)/$ $1 [L,R=301]
