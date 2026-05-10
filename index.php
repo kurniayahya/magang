@@ -178,7 +178,7 @@ if (!$route || $route === 'login') {
 
         <div style="text-align: center; margin-top: 30px; color: var(--text-muted); font-size: 0.85rem;">
             <p>&copy; <?= date('Y') ?> MOPI App. All rights reserved.</p>
-            <p style="margin-top: 10px;">Lupa password? Hubungi Admin Sekolah.</p>
+            <p style="margin-top: 10px;"><a href="<?= APP_URL ?>/privacy-policy" style="color: var(--primary); text-decoration: none;">Kebijakan Privasi</a> | Lupa password? Hubungi Admin.</p>
         </div>
     </div>
 </body>
@@ -209,6 +209,7 @@ if (!$route || $route === 'login') {
         'admin/tempat_pkl'  => 'pages/admin/tempat_pkl.php',
         'admin/rekap'       => 'pages/admin/rekap.php',
         'admin/pengaturan'  => 'pages/admin/pengaturan.php',
+        'privacy-policy'    => 'pages/privacy-policy.php',
         // Shared
         'logout'            => 'logout.php',
     ];
