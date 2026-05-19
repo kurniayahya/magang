@@ -5,7 +5,24 @@ require_once __DIR__ . '/includes/functions.php';
 
 // Simple Router
 $route = $_GET['route'] ?? '';
-$route = ltrim($route, '/'); // Mendukung Nginx try_files $uri yang membawa slash di depan
+
+if (empty($route)) {
+    // Fallback jika server (misal Nginx) tidak mengirimkan $_GET['route']
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+    $parsedPath = parse_url($requestUri, PHP_URL_PATH);
+    $appUrlPath = parse_url(APP_URL, PHP_URL_PATH);
+    if (empty($appUrlPath)) $appUrlPath = '';
+    
+    if ($appUrlPath !== '' && strpos($parsedPath, $appUrlPath) === 0) {
+        $route = substr($parsedPath, strlen($appUrlPath));
+    } else {
+        $route = $parsedPath;
+    }
+    
+    $route = str_replace('/index.php', '', $route);
+}
+
+$route = trim($route, '/');
 
 if (!$route || $route === 'login') {
     if (isLoggedIn()) {
@@ -107,6 +124,12 @@ if (!$route || $route === 'login') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - <?= APP_NAME ?> | <?= SCHOOL_NAME ?></title>
+    <?php if (!empty($sekolahLogo) && file_exists(UPLOAD_PATH . $sekolahLogo)): ?>
+    <link rel="icon" type="image/png" href="<?= APP_URL ?>/uploads/<?= htmlspecialchars($sekolahLogo) ?>">
+    <link rel="apple-touch-icon" href="<?= APP_URL ?>/uploads/<?= htmlspecialchars($sekolahLogo) ?>">
+    <?php else: ?>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <?php endif; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
