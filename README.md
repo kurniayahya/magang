@@ -13,7 +13,7 @@ MOPI adalah aplikasi berbasis web dengan tampilan *mobile-first* yang dirancang 
 - **Dashboard & Progres**: Pantau statistik kehadiran dan jumlah hari efektif PKL.
 
 ### 👨‍🏫 Guru Pembimbing
-- **Dashboard Monitoring**: Pantau seluruh siswa bimbingan dalam satu layar.
+- **Dashboard Monitoring**: Pantau seluruh siswa bimbingan dalam satu layar, yang otomatis difilter berdasarkan **Tahun PKL Aktif** saat ini.
 - **Validasi Jurnal**: Melihat, menolak, atau memvalidasi jurnal harian siswa bimbingan dengan catatan feedback.
 - **Rekap Laporan**: Lihat dan ekspor rekap presensi dan jurnal seluruh siswa bimbingan ke format Excel.
 - **Peta Lokasi PKL**: Pantau titik absensi tempat PKL siswa bimbingan.
@@ -22,7 +22,8 @@ MOPI adalah aplikasi berbasis web dengan tampilan *mobile-first* yang dirancang 
 - **Dashboard Statistik**: Pantau total kehadiran, jumlah siswa, guru, dan jurnal pending.
 - **Kelola Pengguna (CRUD)**: Manajemen data Siswa, Guru, dan Admin.
 - **Import Massal Excel (XLSX)**: Import data ratusan Siswa dan Guru dalam sekali klik.
-- **Manajemen Tempat PKL**: Data DU/DI dan titik koordinat GPS tersentralisasi dengan radius absensi yang dapat dikustomisasi.
+- **Manajemen Tempat PKL**: Data DU/DI dan titik koordinat GPS tersentralisasi dengan radius absensi yang dapat dikustomisasi. Tersedia juga fitur **Export Excel** untuk mengunduh seluruh data tempat PKL beserta ID-nya.
+- **Filter Tahun Aktif**: Jumlah siswa pada masing-masing tempat PKL otomatis disesuaikan dengan **Tahun PKL Aktif** sekolah.
 - **Rekap Laporan**: Lihat dan ekspor rekap presensi dan jurnal **semua siswa** dengan filter berdasarkan jurusan ke format Excel.
 - **Pengaturan Jam Presensi**: Atur rentang jam Masuk dan rentang jam Pulang yang berlaku global untuk seluruh siswa.
 

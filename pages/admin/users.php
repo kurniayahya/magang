@@ -65,14 +65,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         } else {
-            // Update user
-            $stmt = $db->prepare("UPDATE users SET nama=?,email=?,role=?,aktif=? WHERE id=?");
-            $stmt->execute([$nama,$email,$role,$aktif,$uid]);
-            if ($pass) {
-                $h = $db->prepare("UPDATE users SET password=? WHERE id=?");
-                $h->execute([hashPassword($pass), $uid]);
+            // Cek duplikat email
+            $chk = $db->prepare("SELECT id FROM users WHERE email=? AND id!=?");
+            $chk->execute([$email, $uid]);
+            if ($chk->fetch()) {
+                $err = "Email sudah digunakan oleh pengguna lain.";
+            } else {
+                // Update user
+                $stmt = $db->prepare("UPDATE users SET nama=?,email=?,role=?,aktif=? WHERE id=?");
+                $stmt->execute([$nama,$email,$role,$aktif,$uid]);
+                if ($pass) {
+                    $h = $db->prepare("UPDATE users SET password=? WHERE id=?");
+                    $h->execute([hashPassword($pass), $uid]);
+                }
+                
+                if ($role === 'siswa') {
+                    $s = $db->prepare("UPDATE siswa SET nis=?, kelas=?, jurusan_id=?, tempat_pkl_id=?, guru_pembimbing_id=?, tanggal_mulai=?, tanggal_selesai=?, total_hari_pkl=?, tahun_pkl=? WHERE user_id=?");
+                    $s->execute([
+                        sanitize($_POST['nis']),
+                        sanitize($_POST['kelas']),
+                        (int)$_POST['jurusan_id'],
+                        (int)$_POST['tempat_pkl_id'] ?: null,
+                        (int)$_POST['guru_pembimbing_id'] ?: null,
+                        $_POST['tanggal_mulai'] ?: null,
+                        $_POST['tanggal_selesai'] ?: null,
+                        (int)($_POST['total_hari_pkl'] ?: 90),
+                        sanitize($_POST['tahun_pkl'] ?? ''),
+                        $uid
+                    ]);
+                } elseif ($role === 'guru') {
+                    $g = $db->prepare("UPDATE guru SET nip=?, kode=? WHERE user_id=?");
+                    $g->execute([sanitize($_POST['nip']), sanitize($_POST['kode']), $uid]);
+                }
+                $msg = "User berhasil diperbarui.";
             }
-            $msg = "User berhasil diperbarui.";
         }
     }
 
@@ -122,7 +148,7 @@ if ($filterTahun && $filterRole !== 'admin' && $filterRole !== 'guru') {
     $params[] = $filterTahun;
 }
 
-$stmt = $db->prepare("SELECT u.*, s.nis, s.kelas, s.tahun_pkl, g.kode as guru_kode FROM users u LEFT JOIN siswa s ON u.id = s.user_id LEFT JOIN guru g ON u.id = g.user_id $where ORDER BY u.role, u.nama LIMIT 100");
+$stmt = $db->prepare("SELECT u.*, s.nis, s.kelas, s.tahun_pkl, s.jurusan_id, s.tempat_pkl_id, s.guru_pembimbing_id, s.tanggal_mulai, s.tanggal_selesai, s.total_hari_pkl, g.kode as guru_kode, g.nip FROM users u LEFT JOIN siswa s ON u.id = s.user_id LEFT JOIN guru g ON u.id = g.user_id $where ORDER BY u.role, u.nama LIMIT 100");
 $stmt->execute($params);
 $users = $stmt->fetchAll();
 
@@ -161,7 +187,7 @@ include __DIR__ . '/../../includes/header.php';
 </div>
 
 <!-- Tombol Tambah -->
-<button class="btn btn-primary" onclick="openSheet('sheetAddUser')" style="margin-bottom:15px;">
+<button class="btn btn-primary" onclick="openAddUser()" style="margin-bottom:15px;">
     <i class="fas fa-user-plus"></i> Tambah User
 </button>
 
@@ -191,6 +217,9 @@ include __DIR__ . '/../../includes/header.php';
             </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+            <!-- Edit -->
+            <button class="btn" style="padding:6px 10px;width:auto;font-size:0.7rem;background:var(--primary);color:white;"
+                    title="Edit" onclick="openEditUser(<?= htmlspecialchars(json_encode($u)) ?>)"><i class="fas fa-edit"></i></button>
             <!-- Reset PW -->
             <form method="POST" action="" onsubmit="return confirm('Reset password ke \'password\'?')">
                 <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
@@ -337,6 +366,66 @@ function toggleRoleFields() {
     document.getElementById('fieldsSiswa').style.display = role === 'siswa' ? 'block' : 'none';
     document.getElementById('fieldsGuru').style.display  = role === 'guru'  ? 'block' : 'none';
 }
+
+function openAddUser() {
+    const sheet = document.getElementById('sheetAddUser');
+    sheet.querySelector('h3').innerHTML = '<i class=\"fas fa-user-plus\" style=\"color:var(--primary);\"></i> Tambah User Baru';
+    sheet.querySelector('input[name=\"uid\"]').value = '0';
+    sheet.querySelector('input[name=\"nama\"]').value = '';
+    sheet.querySelector('input[name=\"email\"]').value = '';
+    sheet.querySelector('input[name=\"password\"]').value = '';
+    document.getElementById('roleSelect').value = 'siswa';
+    document.getElementById('aktifCheck').checked = true;
+
+    // Field siswa
+    sheet.querySelector('input[name=\"tahun_pkl\"]').value = '<?= htmlspecialchars($currentTahunAktif) ?>';
+    sheet.querySelector('input[name=\"nis\"]').value = '';
+    sheet.querySelector('input[name=\"kelas\"]').value = '';
+    sheet.querySelector('select[name=\"jurusan_id\"]').value = '';
+    sheet.querySelector('select[name=\"tempat_pkl_id\"]').value = '';
+    sheet.querySelector('select[name=\"guru_pembimbing_id\"]').value = '';
+    sheet.querySelector('input[name=\"tanggal_mulai\"]').value = '';
+    sheet.querySelector('input[name=\"tanggal_selesai\"]').value = '';
+    sheet.querySelector('input[name=\"total_hari_pkl\"]').value = 90;
+
+    // Field guru
+    sheet.querySelector('input[name=\"kode\"]').value = '';
+    sheet.querySelector('input[name=\"nip\"]').value = '';
+
+    toggleRoleFields();
+    openSheet('sheetAddUser');
+}
+
+function openEditUser(u) {
+    const sheet = document.getElementById('sheetAddUser');
+    sheet.querySelector('h3').innerHTML = '<i class=\"fas fa-user-edit\" style=\"color:var(--primary);\"></i> Edit User';
+    sheet.querySelector('input[name=\"uid\"]').value = u.id;
+    sheet.querySelector('input[name=\"nama\"]').value = u.nama || '';
+    sheet.querySelector('input[name=\"email\"]').value = u.email || '';
+    sheet.querySelector('input[name=\"password\"]').value = ''; 
+    document.getElementById('roleSelect').value = u.role || 'siswa';
+    document.getElementById('aktifCheck').checked = u.aktif == 1;
+
+    // Field siswa
+    sheet.querySelector('input[name=\"tahun_pkl\"]').value = u.tahun_pkl || '<?= htmlspecialchars($currentTahunAktif) ?>';
+    sheet.querySelector('input[name=\"nis\"]').value = u.nis || '';
+    sheet.querySelector('input[name=\"kelas\"]').value = u.kelas || '';
+    sheet.querySelector('select[name=\"jurusan_id\"]').value = u.jurusan_id || '';
+    sheet.querySelector('select[name=\"tempat_pkl_id\"]').value = u.tempat_pkl_id || '';
+    sheet.querySelector('select[name=\"guru_pembimbing_id\"]').value = u.guru_pembimbing_id || '';
+    sheet.querySelector('input[name=\"tanggal_mulai\"]').value = u.tanggal_mulai || '';
+    sheet.querySelector('input[name=\"tanggal_selesai\"]').value = u.tanggal_selesai || '';
+    sheet.querySelector('input[name=\"total_hari_pkl\"]').value = u.total_hari_pkl || 90;
+
+    // Field guru
+    sheet.querySelector('input[name=\"kode\"]').value = u.guru_kode || '';
+    sheet.querySelector('input[name=\"nip\"]').value = u.nip || '';
+
+    toggleRoleFields();
+    toggleRoleFields();
+    openSheet('sheetAddUser');
+}
+
 toggleRoleFields();
 </script>
 ";
