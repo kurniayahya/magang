@@ -5,7 +5,14 @@ requireRole('guru');
 $user = getCurrentUser();
 $db   = getDB();
 
-$siswaBimbingan = getSiswaBimbingan($user['id']);
+$sekolahInfo = $db->query("SELECT tahun_aktif FROM sekolah WHERE id = " . SCHOOL_ID)->fetch();
+$currentTahunAktif = $sekolahInfo['tahun_aktif'] ?? '2024';
+
+$siswaBimbinganRaw = getSiswaBimbingan($user['id']);
+$siswaBimbingan = array_values(array_filter($siswaBimbinganRaw, function($s) use ($currentTahunAktif) {
+    return $s['tahun_pkl'] == $currentTahunAktif;
+}));
+
 $totalSiswa  = count($siswaBimbingan);
 $totalHadir  = count(array_filter($siswaBimbingan, fn($s) => $s['presensi_status'] === 'hadir'));
 $belumAbsen  = $totalSiswa - $totalHadir;

@@ -35,8 +35,9 @@ body {
     color: var(--text-main);
     line-height: 1.5;
     overflow-x: hidden;
-    padding-top: var(--header-height);
-    padding-bottom: calc(var(--nav-height) + 20px);
+    /* UPDATE: Tambahkan env(safe-area) pada kalkulasi padding */
+    padding-top: calc(var(--header-height) + env(safe-area-inset-top));
+    padding-bottom: calc(var(--nav-height) + 20px + env(safe-area-inset-bottom));
 }
 
 a {
@@ -45,7 +46,12 @@ a {
 }
 
 /* Typography */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     font-weight: 700;
 }
 
@@ -55,13 +61,16 @@ h1, h2, h3, h4, h5, h6 {
     top: 0;
     left: 0;
     right: 0;
-    height: var(--header-height);
+    /* UPDATE: Sesuaikan tinggi dan padding atas */
+    height: calc(var(--header-height) + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+    padding-right: 20px;
+    padding-left: 20px;
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: white;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
     z-index: 1000;
     box-shadow: var(--shadow-md);
 }
@@ -141,13 +150,16 @@ h1, h2, h3, h4, h5, h6 {
     bottom: 0;
     left: 0;
     right: 0;
-    height: var(--nav-height);
+    /* UPDATE: Sesuaikan tinggi dan padding bawah */
+    height: calc(var(--nav-height) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: 10px;
+    padding-right: 10px;
     background-color: var(--surface);
     display: flex;
     justify-content: space-around;
     align-items: center;
     border-top: 1px solid var(--border);
-    padding: 0 10px;
     z-index: 1000;
     box-shadow: 0 -4px 6px -1px rgb(0 0 0 / 0.05);
 }
@@ -277,12 +289,35 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Custom Icon Backgrounds */
-.bg-orange { background: linear-gradient(135deg, #FFB75E, #ED8F03); color: white; }
-.bg-blue { background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; }
-.bg-teal { background: linear-gradient(135deg, #13f1fc, #0470dc); color: white; }
-.bg-yellow { background: linear-gradient(135deg, #f6d365, #fda085); color: white; }
-.bg-purple { background: linear-gradient(135deg, #a18cd1, #fbc2eb); color: white; }
-.bg-green { background: linear-gradient(135deg, #84fab0, #8fd3f4); color: white; }
+.bg-orange {
+    background: linear-gradient(135deg, #FFB75E, #ED8F03);
+    color: white;
+}
+
+.bg-blue {
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    color: white;
+}
+
+.bg-teal {
+    background: linear-gradient(135deg, #13f1fc, #0470dc);
+    color: white;
+}
+
+.bg-yellow {
+    background: linear-gradient(135deg, #f6d365, #fda085);
+    color: white;
+}
+
+.bg-purple {
+    background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+    color: white;
+}
+
+.bg-green {
+    background: linear-gradient(135deg, #84fab0, #8fd3f4);
+    color: white;
+}
 
 /* Dashboard Header */
 .dash-header {
@@ -311,7 +346,7 @@ h1, h2, h3, h4, h5, h6 {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    border: 3px solid rgba(255,255,255,0.3);
+    border: 3px solid rgba(255, 255, 255, 0.3);
 }
 
 /* Stats Progress Card */
@@ -491,7 +526,7 @@ h1, h2, h3, h4, h5, h6 {
     transform: translate(-50%, -100%);
     color: var(--error);
     font-size: 2.5rem;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Alerts */
@@ -505,8 +540,15 @@ h1, h2, h3, h4, h5, h6 {
     gap: 10px;
 }
 
-.alert-danger { background-color: #FEE2E2; color: #B91C1C; }
-.alert-success { background-color: #D1FAE5; color: #065F46; }
+.alert-danger {
+    background-color: #FEE2E2;
+    color: #B91C1C;
+}
+
+.alert-success {
+    background-color: #D1FAE5;
+    color: #065F46;
+}
 
 /* Upload Area */
 .upload-area {
@@ -539,7 +581,7 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     z-index: 2000;
     transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 -10px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.1);
     padding: 30px 20px 40px 20px;
 }
 
@@ -553,7 +595,7 @@ h1, h2, h3, h4, h5, h6 {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 1999;
     display: none;
     backdrop-filter: blur(2px);
@@ -573,8 +615,15 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Animations */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .animate-fade-in {
